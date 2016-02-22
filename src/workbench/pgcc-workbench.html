@@ -1,0 +1,166 @@
+<link rel="import" href="../index.html">
+<link rel="import" href="../ui/h-divider.html">
+<link rel="import" href="../ui/v-divider.html">
+
+
+<dom-module id="pgcc-workbench">
+<style>
+
+:host { position:fixed; top:0; bottom:0; left:0; right:0; display:flex; flex-direction:column; align-items: stretch; width:100%; height:100%;}
+
+table {  position:fixed; top:0; bottom:0; left:0; right:0; padding:0; margin:0; border:0; border-collapse: collapse; width:100%; height:100%; }
+
+menu-bar { visibility:hidden; position:fixed; height:0; width:0;}
+tool-bar {
+	background:#f1f1f1; color:#333333;
+	display:flex; width:100%; padding:3px; align-content: center; align-items: center;
+	border-bottom:1px solid #dddddd;
+	border-top:1px solid #ededed;
+	box-shadow: 0px 0px 2px rgba(0,0,0,0.1);
+}
+tool-bar > item { position:relative; top:0; border-radius:3px; display:flex; background:#f1f1f1; padding:3px; margin:0px 3px; box-sizing:border-box; border:1px solid transparent; cursor:hand; height:40px; align-content:center; align-items: center; justify-content: center;}
+tool-bar > item:hover { box-shadow:2px 2px 2px #cccccc; border:1px solid #aaaaaa; }
+tool-bar > separator { position:relative; top:0; width:1px; border-left: 1px solid #cacaca; margin:4px; display:inline-block; height:20px; }
+tool-bar img { display:inline-block; height:100%; width:auto;}
+
+div.v { display:flex;flex-direction:column; align-items: stretch; align-content: stretch; justify-content: stretch;}
+div.h { display:flex;flex-direction:row; align-items: stretch; align-content: stretch; justify-content: stretch;}
+
+</style>
+<template>
+	<menu-bar id="menubar">
+		<menu label="_File">
+			<item>_New</item>
+			<item>_Open</item>
+			<item>_Close</item>
+			<item>_Save</item>
+			<item>_Save As</item>
+			<separator></separator>
+			<item>_Quit</item>
+		</menu>
+		<menu label="_Edit">
+			<item>_Cut</item>
+			<item>_Copy</item>
+			<item>_Paste</item>
+			<separator></separator>
+			<item>Delete</item>
+		</menu>
+		<menu label="_View"></menu>
+		<menu label="_Find"></menu>
+		<menu label="_Help"></menu>
+	</menu-bar>
+
+	<table border=0 cellpadding=0 cellspacing=0><tr><td style="padding:1px;">
+		<tool-bar id="toolbar">
+			<item>New</item>
+			<item>Open</item>
+			<item>Save</item>
+			<item>SaveAs</item>
+			<item>Close</item>
+			<separator></separator>
+			<item>Undo</item>
+			<item>Redo</item>
+			<item>Cut</item>
+			<item>Copy</item>
+			<item>Paste</item>
+			<separator></separator>
+			<item>CreateModule</item>
+			<item>CreateLink</item>
+			<item>Delete</item>
+			<separator></separator>
+			<item>Search</item>
+			<separator></separator>
+			<item>Compile</item>
+			<item>Start</item>
+			<item>Stop</item>
+		</tool-bar>
+	</td></tr>
+
+	<tr><td height=100%>
+		<h-divider align="left">
+			<div class="left"><content select='[location="left"]'></content></div>
+			<v-divider class="right">
+				<h-divider align="right" class="top">
+					<div class="left"><content select='[location="center"]'></content></div>
+					<div class="right"><content select='[location="right"]'></content></div>
+				</h-divider>
+				<div class="bottom"><content select='[location="bottom"]'></content></div>
+			</v-divider>
+		</h-divider>
+	</td></tr>
+	<tr><td>
+		<div id="status">{{status}}</div>
+	</td></tr>
+</table>
+</template>
+</dom-module>
+<script src="commands.js"></script>
+<script>
+
+var WORKBENCH = null;
+
+
+Polymer({
+	is: 'pgcc-workbench',
+	properties: {
+		status:{notify:true}
+	},
+
+	attached: function () {
+		WINDOW.maximize();
+		WORKBENCH = this;
+		var menubar = this.menubar = new gui.Menu({type:'menubar'});
+		$(this.$.menubar).children().each(function(){
+			var menuitem = new gui.MenuItem({
+				label: $(this).attr("label").replace("_", "").trim(),
+				submenu: new gui.Menu()
+			});
+			menubar.append(menuitem);
+			$(this).children().each(function(){
+				if(this.tagName === 'SEPARATOR') {
+					menuitem.submenu.append(new gui.MenuItem({type: "separator"}));
+				} else {
+					var	label = $(this).text().replace("_", "").trim();
+					var command = $(this).attr("command");
+					menuitem.submenu.append(new gui.MenuItem({
+						label:label,
+						click:function() { WORKBENCH.command(command); }
+					}));
+				}
+			});
+		});
+		WINDOW.menu = this.menubar;
+
+		$(this.$.toolbar).children().each(function(){
+			if(this.tagName === "SEPARATOR") return;
+			var icon = "./resources/icons/" + $(this).text().trim()+".png";
+			$(this).text("");
+			$(this).html("<img class='pgcc-workbench' src='"+icon+"'>");
+		});
+
+
+		main();
+	},
+
+	//////////////
+	// COMMANDS //
+	//////////////
+
+	command: function(id) {
+		var f = Commands[id];
+		if(typeof(f) === 'function') f();
+	},
+
+	///////////
+	// VIEWS //
+	///////////
+
+	openView: function(view) {},
+	closeView: function(view) {},
+	getView: function(view) {}
+
+
+});
+
+
+</script>

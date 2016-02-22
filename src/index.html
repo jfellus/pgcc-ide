@@ -1,0 +1,57 @@
+<html>
+<head>
+	<style>
+		* { margin:0; padding:0; font-family: Ubuntu; font-size:11pt; cursor:default;}
+	</style>
+	<script>
+	console.log = function (d) {  process.stdout.write(d + '\n'); };
+	console.error = function (d) {  process.stderr.write(d + '\n'); };
+
+	require('nw.gui').Window.get().showDevTools();
+
+	</script>
+	<script src="./lib/d3.min.js"></script>
+	<script src="./lib/jquery.js"></script>
+	<script src="./lib/jquery-ui.js"></script>
+	<link rel="import" href="./bower_components/polymer/polymer.html">
+	<link rel="import" href="./workbench/pgcc-workbench.html">
+	<link rel="import" href="./ui/tabbed-pane.html">
+</head>
+<body>
+	<pgcc-workbench>
+		<tabbed-pane location="left">
+			<view-explorer></view-explorer>
+		</tabbed-pane>
+		<tabbed-pane location="center">
+		</tabbed-pane>
+		<tabbed-pane location="bottom">
+			<view-console></view-console>
+		</tabbed-pane>
+		<tabbed-pane location="right">
+			<view-properties></view-properties>
+		</tabbed-pane>
+	</pgcc-workbench>
+</body>
+
+<script>
+	var gui = require("nw.gui");
+	var WINDOW = require('nw.gui').Window.get();
+
+	function DBG(x) {
+		WORKBENCH.status = x;
+	}
+
+
+	function main() {
+		var file = null;
+		for(var i=0;i<gui.App.argv.length;i++) if(gui.App.argv[i][0]!='-') file = gui.App.argv[i];
+		if(file) Commands.Open(file);
+
+		else Commands.Open("/home/jfellus/q/pgccjs/test.script");
+
+		WORKBENCH.openView("Create");
+		WORKBENCH.openView("plot");
+	}
+
+</script>
+</html>

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+F=`readlink -f $0`
+DIR=`dirname $F`
+cd $DIR
+nw ./bin/pgcc-ide.nw --remote-debugging-port=9988 $*

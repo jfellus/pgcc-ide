@@ -1,0 +1,21 @@
+{
+	"name": "pgcc-ide",
+	"version": "0.8.0",
+	"homepage": "https://github.com/jfellus/pgcc-ide",
+	"description": "A graphical editor for PGCC",
+	"authors": [
+		"Jerome Fellus <jfellus@gmail.com>"
+	],
+	"main": "index.html",
+	"license": "LGPL v3", 
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"test",
+		"tests"
+	],
+	"dependencies": {
+		"polymer": "Polymer/polymer"
+	}
+}
