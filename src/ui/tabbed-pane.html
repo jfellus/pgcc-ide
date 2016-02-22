@@ -15,16 +15,14 @@
 }
 
 #header {
+	position:relative;
 	display:flex; width:100%;
 	justify-content: flex-start;
 	align-items: stretch;
 	height:auto;
 	flex-direction: row;
 	background:#dddddd;
-	border-bottom:1px solid #cccccc;
-}
-
-#header {
+	/*border-bottom:1px solid #cccccc;*/
 	white-space: nowrap;
 	overflow:hidden;
 	border-top-left-radius:8px;
@@ -32,7 +30,8 @@
 	padding:0; margin:0;
 }
 
-#header > * {
+#header > div {
+	position:relative;
 	display:inline-block;
 	padding:6px;
 	color:rgba(0,0,0,0.66);
@@ -41,17 +40,17 @@
 }
 
 
-#header > *:hover {
+#header > div:hover {
 	white-space: nowrap;
 	background:#f0f0f0;
-	/*box-shadow: 0 0 45px rgba(0,0,0,0.5);*/
 	border-top-left-radius:8px;
 	border-top-right-radius:8px;
 	color:black;
+	z-index:0;
 }
 
 
-#header > *.active {
+#header > div.active {
 	background:white;
 	box-shadow: 0 0 45px rgba(0,0,0,0.5);
 	border-top:1px solid rgba(0,0,0,0.2);
@@ -59,13 +58,16 @@
 	border-top-left-radius:8px;
 	border-top-right-radius:8px;
 	color:black;
+	border-bottom:13px solid white;
+	margin-bottom:-13px;
+	z-index: 1000;
 }
 
 #content {
 	padding:10px;
 	display:flex;
 	flex:1;
-	background:red;
+	background:white;
 }
 
 span.close {
@@ -81,13 +83,22 @@ span.close {
 span.close:hover {
 	background-image: url("../resources/icons/close_tab_hover.png");
 }
-#header > *.active span.close { visibility: visible; }
-#header > *:hover span.close { visibility: visible; }
+#header > div.active span.close { visibility: visible; }
+#header > div:hover span.close { visibility: visible; }
 
+#botline {
+		position:absolute;
+		width:100%;
+		bottom:0;
+		border-bottom:1px solid rgba(0,0,0,0.2);
+		box-shadow:0 -1px 1px rgba(0,0,0,0.1);
+		z-index:1;
+}
 
 </style>
 <template>
 	<div id="header">
+		<span id="botline"></span>
 		<div>Tab1<span class="close"></span></div>
 		<div>Blabla ed 2<span class="close"></span></div>
 		<div class="active">Slip view 3<span class="close"></span></div>
