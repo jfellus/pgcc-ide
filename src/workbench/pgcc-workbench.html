@@ -1,6 +1,7 @@
 <link rel="import" href="../index.html">
 <link rel="import" href="../ui/h-divider.html">
 <link rel="import" href="../ui/v-divider.html">
+<link rel="import" href="../ui/tabbed-pane.html">
 
 
 <dom-module id="pgcc-workbench">
@@ -78,13 +79,13 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 
 	<tr><td height=100%>
 		<h-divider align="left">
-			<div class="left"><content select='[location="left"]'></content></div>
+			<div class="left"><tabbed-pane id="left"></tabbed-pane></div>
 			<v-divider class="right">
 				<h-divider align="right" class="top">
-					<div class="left"><content select='[location="center"]'></content></div>
-					<div class="right"><content select='[location="right"]'></content></div>
+					<div class="left"><tabbed-pane id="center"></tabbed-pane></div>
+					<div class="right"><tabbed-pane id="right"></tabbed-pane></div>
 				</h-divider>
-				<div class="bottom"><content select='[location="bottom"]'></content></div>
+				<div class="bottom"><tabbed-pane id="bottom"></tabbed-pane></div>
 			</v-divider>
 		</h-divider>
 	</td></tr>
@@ -103,7 +104,8 @@ var WORKBENCH = null;
 Polymer({
 	is: 'pgcc-workbench',
 	properties: {
-		status:{notify:true}
+		status:{notify:true},
+		views:{notify:true, value:[]}
 	},
 
 	attached: function () {
@@ -137,10 +139,10 @@ Polymer({
 			var icon = "./resources/icons/" + cmd +".svg";
 			$(this).text("");
 			$(this).html("<img class='pgcc-workbench' src='"+icon+"' alt='"+cmd+"' title='"+cmd+"'>");
+			$(this).click(function(){ Commands[cmd](); });
 		});
 
-
-		main();
+		setTimeout(main, 200);
 	},
 
 	//////////////
@@ -156,10 +158,26 @@ Polymer({
 	// VIEWS //
 	///////////
 
-	openView: function(view) {},
-	closeView: function(view) {},
-	getView: function(view) {}
+	openView: function(view, label, location) {
+		if(!location) location = $(view).attr('location');
+		if(!location) location = "center";
+		if(!label) label = $(view).attr("label");
+		if(!label) label = $(view).get(0).tagName;
+		this.push('views', {content:view, location:location, label:label});
+		$(view).attr("location", location);
+		$(view).attr("label", label);
+		this.$[location].addTab(view);
+	},
 
+	closeView: function(label) {
+		var location = this.getView(label);
+		this.$[location].closeTab(label);
+	},
+
+	getView: function(label) {
+		var v = this.views.filter(function(v) {return v.label === label;});
+		return v.length ? v[0] : null;
+	}
 
 });
 

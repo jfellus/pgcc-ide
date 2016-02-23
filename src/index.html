@@ -13,23 +13,13 @@
 	<script src="./lib/d3.min.js"></script>
 	<script src="./lib/jquery.js"></script>
 	<script src="./lib/jquery-ui.js"></script>
+	<script src="./utils/utils.js"></script>
 	<link rel="import" href="./bower_components/polymer/polymer.html">
 	<link rel="import" href="./workbench/pgcc-workbench.html">
 	<link rel="import" href="./ui/tabbed-pane.html">
 </head>
 <body>
 	<pgcc-workbench>
-		<tabbed-pane location="left">
-			<view-explorer></view-explorer>
-		</tabbed-pane>
-		<tabbed-pane location="center">
-		</tabbed-pane>
-		<tabbed-pane location="bottom"> 
-			<view-console></view-console>
-		</tabbed-pane>
-		<tabbed-pane location="right">
-			<view-properties></view-properties>
-		</tabbed-pane>
 	</pgcc-workbench>
 </body>
 
@@ -49,8 +39,14 @@
 
 		else Commands.Open("/home/jfellus/q/pgccjs/test.script");
 
-		WORKBENCH.openView("Create");
-		WORKBENCH.openView("plot");
+		WORKBENCH.openView($("<div>Explorer </div>"), "Explorer De Mon Cul QUi Pue 2", "left");
+		WORKBENCH.openView($("<div>Properties</div>"), "Properties", "right");
+		WORKBENCH.openView($("<div>Libraries</div>"), "Libraries", "left");
+		WORKBENCH.openView($("<div>Includes</div>"), "Includes", "left");
+		WORKBENCH.openView($("<div>File1.script</div>"), "File1.script", "center");
+		WORKBENCH.openView($("<div>File2.script</div>"), "File2.script", "center");
+		WORKBENCH.openView($("<div>File3.script</div>"), "File3.script", "center");
+		WORKBENCH.openView($("<div>Console</div>"), "Console", "bottom");
 	}
 
 </script>

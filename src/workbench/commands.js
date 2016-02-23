@@ -1,7 +1,14 @@
 Commands = {};
 
 Commands.New = function() {};
-Commands.Open = function() {};
+Commands.Open = function(file) {
+	if(!file) {
+		return file_open_dialog(function(f){Commands.Open(f);}, "*.*");
+	}
+	else {
+		WORKBENCH.openView($("<div>Mon code pour " + file + "</div>"), file);
+	}
+};
 Commands.Save = function() {};
 Commands.SaveAs = function() {};
 Commands.Close = function() {};

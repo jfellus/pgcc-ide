@@ -40,6 +40,8 @@
 	color:rgba(0,0,0,0.66);
 	/*transition:all 0.2s;*/
 	cursor:hand;
+	max-width:200px;
+	white-space: nowrap;
 }
 
 
@@ -50,6 +52,7 @@
 	border-top-right-radius:8px;
 	color:black;
 	z-index:0;
+	overflow: hidden;
 }
 
 
@@ -66,6 +69,13 @@
 	z-index: 1000;
 }
 
+span.name {
+	display: block;
+  text-align: right;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 #content {
 	padding:10px;
 	display:flex;
@@ -74,12 +84,13 @@
 }
 
 span.close {
-	margin-left: 3px;
-	padding: 6px;
+	display:block;
+	margin:0;
+	margin-left: 0px;
 	font-weight: bold;
 	color: rgba(100,200,0,0.4);
-	background: url('../resources/icons/close_tab.png') no-repeat 0px;
-	width: 20px;
+	background: url('../resources/icons/close_tab.png') no-repeat right;
+	width: 15px;
 	height: 20px;
 	visibility:hidden;
 }
@@ -98,12 +109,28 @@ span.close:hover {
 		z-index:1;
 }
 
+table { float:right; max-width:50%; white-space: nowrap;}
+td:first-child { overflow:hidden; text-align:right; white-space: nowrap;}
+
+.umbrella {
+	position:absolute;
+	left:0; height:100%;
+	display:block;
+	background:linear-gradient( to right, #dddddd,#dddddd, transparent,transparent);
+	width:10px;
+}
+#header > div:hover .umbrella { background:linear-gradient( to right,#f0f0f0,#f0f0f0, transparent,transparent); }
+#header > div.active .umbrella { background:linear-gradient( to right,white,white, transparent,transparent); }
+
 </style>
 <template>
 	<div id="header">
 		<span id="botline"></span>
 		<template is="dom-repeat" items="{{tabs}}">
-			<div on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">{{item}}<span class="close" on-tap="closeTab"></span></div>
+			<div on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">
+				<span class="umbrella"></span>
+				<table><tr><td><span class="name">{{item}}</span></td><td width="20px"><span class="close" on-tap="closeTab"></span></td></tr></table>
+			</div>
 		</template>
 	</div>
 	<div id="content">
@@ -121,23 +148,13 @@ Polymer({
 	attached: function () {
 		var that = this;
 		if(!this.tabs) this.tabs = [];
-
-		for(var i =0; i<3; i++) {
-			setTimeout(function(){
-				var e = document.createElement("div");
-				var z = Math.round(Math.random()*10);
-				$(e).html("Content" + z);
-				$(e).attr("label", "Tab"+z);
-				that.addTab(e);
-			}, 100);
-		}
 	},
 
 	addTab: function(element) {
 		var label = element.label;
 		if(!label) label = $(element).attr("label");
 		if(!label) label = element.tagName;
-		if(this.tabs.indexOf(label)!==-1) { console.log("ALready " + this.tabs + " = " + label); return false;}
+		if(this.tabs.indexOf(label)!==-1) return this.selectTab(label);
 
 		$(element).attr("label", label);
 		$(element).hide();
@@ -187,13 +204,13 @@ Polymer({
 		if(tab && typeof(tab) ==="string") {
 			return $(that.$.content).children("[label='"+tab+"']");
 		} else if($(tab).text()){
-			var tabId = $(tab).text().replace(" ", "");
+			var tabId = $(tab).text();
 			return that.getTabContent(tab);
 		}
 	},
 
 	tabId: function(tab) {
-		return $(tab).text().replace(" ", "");
+		return $(tab).text();
 	},
 
 	computeClass: function(tab) { return tab===this.selectedTab ? "active" : ""; }
