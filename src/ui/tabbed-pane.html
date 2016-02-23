@@ -12,6 +12,7 @@
 	flex-direction: column;
 	justify-content: flex-start;
 	align-items: stretch;
+	padding:0; margin:0;
 }
 
 #header {
@@ -28,6 +29,8 @@
 	border-top-left-radius:8px;
 	border-top-right-radius:8px;
 	padding:0; margin:0;
+	border:none;
+	min-height:20px;
 }
 
 #header > div {
@@ -35,7 +38,7 @@
 	display:inline-block;
 	padding:6px;
 	color:rgba(0,0,0,0.66);
-	transition:all 0.2s;
+	/*transition:all 0.2s;*/
 	cursor:hand;
 }
 
@@ -99,13 +102,15 @@ span.close:hover {
 <template>
 	<div id="header">
 		<span id="botline"></span>
-		<div>Tab1<span class="close"></span></div>
-		<div>Blabla ed 2<span class="close"></span></div>
-		<div class="active">Slip view 3<span class="close"></span></div>
-		<div>Tabounet4<span class="close"></span></div>
+		<div on-tap="select">Tab1<span class="close" on-tap="close"></span></div>
+		<div on-tap="select">Blabla ed 2<span class="close" on-tap="close"></span></div>
+		<div on-tap="select">Slip view 3<span class="close" on-tap="close"></span></div>
+		<div on-tap="select">Tabounet4<span class="close" on-tap="close"></span></div>
 	</div>
 	<div id="content">
-	<content></content>
+	<content>
+
+	</content>
 	</div>
 </template>
 </dom-module>
@@ -114,9 +119,45 @@ span.close:hover {
 Polymer({
 	is: 'tabbed-pane',
 	properties: {
+		selected:{notify:true}
 	},
 
 	attached: function () {
+		this.select($(this.$.header).children().eq(1));
+	},
+
+	select: function(tab) {
+		var that = this;
+		if(tab && typeof(tab)==="string") {
+			$(this.$.header).children().each(function() {
+				$(this).removeClass("active");
+				var tabId = $(this).text().replace(" ", "");
+				if(tabId !== tab) return;
+				$(this).addClass("active");
+			});
+		} else if(tab.target) {
+			var tabId = $(tab.target).text().replace(" ", "");
+			return this.select(tabId);
+		} else if(tab.text) {
+			var tabId = $(tab).text().replace(" ", "");
+			return this.select(tabId);
+		}
+	},
+
+	close: function(tab) {
+		var that = this;
+		if(tab && typeof(tab)==="string") {
+			$(this.$.header).children().each(function() {
+				var tabId = $(this).text().replace(" ", "");
+				if(tabId !== tab) return;
+				if($(this).hasClass("active")) that.select($(this).next().length ? $(this).next() : $(this).prev());
+				$(this).remove();
+			});
+		}
+		else if(tab.target) {
+			var tabId = $(tab.target).parent().text().replace(" ", "");
+			return this.close(tabId);
+		}
 	}
 });
 

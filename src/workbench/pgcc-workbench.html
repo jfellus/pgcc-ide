@@ -133,9 +133,10 @@ Polymer({
 
 		$(this.$.toolbar).children().each(function(){
 			if(this.tagName === "SEPARATOR") return;
-			var icon = "./resources/icons/" + $(this).text().trim()+".png";
+			var cmd = $(this).text().trim();
+			var icon = "./resources/icons/" + cmd +".svg";
 			$(this).text("");
-			$(this).html("<img class='pgcc-workbench' src='"+icon+"'>");
+			$(this).html("<img class='pgcc-workbench' src='"+icon+"' alt='"+cmd+"' title='"+cmd+"'>");
 		});
 
 
