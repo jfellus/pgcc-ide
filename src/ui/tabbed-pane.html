@@ -102,15 +102,11 @@ span.close:hover {
 <template>
 	<div id="header">
 		<span id="botline"></span>
-		<div on-tap="select">Tab1<span class="close" on-tap="close"></span></div>
-		<div on-tap="select">Blabla ed 2<span class="close" on-tap="close"></span></div>
-		<div on-tap="select">Slip view 3<span class="close" on-tap="close"></span></div>
-		<div on-tap="select">Tabounet4<span class="close" on-tap="close"></span></div>
+		<template is="dom-repeat" items="{{tabs}}">
+			<div on-tap="selectTab">{{item}}<span class="close" on-tap="closeTab"></span></div>
+		</template>
 	</div>
 	<div id="content">
-	<content>
-
-	</content>
 	</div>
 </template>
 </dom-module>
@@ -119,44 +115,70 @@ span.close:hover {
 Polymer({
 	is: 'tabbed-pane',
 	properties: {
-		selected:{notify:true}
+		selected:{notify:true},
+		tabs:{notify:false,value:[]}
 	},
 
 	attached: function () {
-		this.select($(this.$.header).children().eq(1));
+		if(this.tabs.length != 0) return;
+		this.selectTab($(this.$.header).children().eq(1));
+
+		for(var i =0; i<3; i++) {
+			var e = document.createElement("div");
+			$(e).html("prout "+ i);
+			$(e).attr("label", "Prout"+i);
+			this.addTab(e);
+		}
 	},
 
-	select: function(tab) {
+	addTab: function(element) {
+		var label = element.label;
+		if(!label) label = $(element).attr("label");
+		if(!label) label = element.tagName;
+
+		$(element).attr("label", label);
+		$(element).hide();
+		$(this.$.content).append($(element));
+		this.push('tabs', label);
+		this.selectTab(label);
+	},
+
+	selectTab: function(tab) {
 		var that = this;
 		if(tab && typeof(tab)==="string") {
 			$(this.$.header).children().each(function() {
 				$(this).removeClass("active");
 				var tabId = $(this).text().replace(" ", "");
+				var tabContent = $(that.$.content).children("[label='"+tabId+"']");
+				tabContent.hide();
 				if(tabId !== tab) return;
 				$(this).addClass("active");
+				tabContent.show();
 			});
 		} else if(tab.target) {
+			tab.stopPropagation(); tab.preventDefault();
 			var tabId = $(tab.target).text().replace(" ", "");
-			return this.select(tabId);
+			return this.selectTab(tabId);
 		} else if(tab.text) {
 			var tabId = $(tab).text().replace(" ", "");
-			return this.select(tabId);
+			return this.selectTab(tabId);
 		}
 	},
 
-	close: function(tab) {
+	closeTab: function(tab) {
 		var that = this;
 		if(tab && typeof(tab)==="string") {
 			$(this.$.header).children().each(function() {
 				var tabId = $(this).text().replace(" ", "");
 				if(tabId !== tab) return;
-				if($(this).hasClass("active")) that.select($(this).next().length ? $(this).next() : $(this).prev());
-				$(this).remove();
+				if($(this).hasClass("active")) that.selectTab($(this).next().length ? $(this).next() : $(this).prev());
+				that.splice('tabs', that.tabs.indexOf(tabId), 1);
 			});
 		}
 		else if(tab.target) {
+			tab.stopPropagation(); tab.preventDefault();
 			var tabId = $(tab.target).parent().text().replace(" ", "");
-			return this.close(tabId);
+			return this.closeTab(tabId);
 		}
 	}
 });
