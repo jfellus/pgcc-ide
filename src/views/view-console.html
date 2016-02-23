@@ -1,0 +1,45 @@
+
+<dom-module id="view-console">
+<style>
+:host { width:100%; height:100%; }
+pre {
+	width:100%; height:100%; overflow: auto;
+	background:black;
+	font-family:Monospace;
+	font-size:14px;
+	color:#bbbbbb;
+	padding:2px;
+	box-sizing: border-box;
+}
+</style>
+<template><pre id="content">{{content}}</pre></template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'view-console',
+	properties: {
+		content:{notify:true, value:""}
+	},
+
+	attached: function() {
+		var that = this;
+		var i = 0;
+		setInterval(function(){
+			i++;
+			that.out("jfellus@jfellus-LIFEBOOK-E744:~$ echo abraham " + i);
+			that.out("Testing stuff ... [DONE]");
+			that.out("Double free or corruption");
+			that.out("");
+		}, 100);
+	},
+
+	out: function(x) {
+		var that = this;
+		this.content += x + "\n";
+		setTimeout(function(){that.$.content.scrollTop = that.$.content.scrollHeight;}, 1);
+	}
+});
+
+
+</script>

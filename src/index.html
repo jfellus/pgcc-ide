@@ -17,6 +17,9 @@
 	<link rel="import" href="./bower_components/polymer/polymer.html">
 	<link rel="import" href="./workbench/pgcc-workbench.html">
 	<link rel="import" href="./ui/tabbed-pane.html">
+	<link rel="import" href="./views/view-explorer.html">
+	<link rel="import" href="./views/view-console.html">
+	<link rel="import" href="./views/view-editor.html">
 </head>
 <body>
 	<pgcc-workbench>
@@ -39,14 +42,15 @@
 
 		else Commands.Open("/home/jfellus/q/pgccjs/test.script");
 
-		WORKBENCH.openView($("<div>Explorer </div>"), "Explorer De Mon Cul QUi Pue 2", "left");
+		WORKBENCH.openView($("<view-explorer></view-explorer>"), "Projects", "left");
 		WORKBENCH.openView($("<div>Properties</div>"), "Properties", "right");
-		WORKBENCH.openView($("<div>Libraries</div>"), "Libraries", "left");
-		WORKBENCH.openView($("<div>Includes</div>"), "Includes", "left");
-		WORKBENCH.openView($("<div>File1.script</div>"), "File1.script", "center");
-		WORKBENCH.openView($("<div>File2.script</div>"), "File2.script", "center");
-		WORKBENCH.openView($("<div>File3.script</div>"), "File3.script", "center");
-		WORKBENCH.openView($("<div>Console</div>"), "Console", "bottom");
+		// WORKBENCH.openView($("<div>Libraries</div>"), "Libraries", "left");
+		// WORKBENCH.openView($("<div>Includes</div>"), "Includes", "left");
+		WORKBENCH.openView($("<view-editor file='File1.script'></view-editor>"), "File1.script", "center");
+		WORKBENCH.openView($("<view-editor file='File2.script'></view-editor>"), "File2.script", "center");
+		WORKBENCH.openView($("<view-editor file='File3.script'></view-editor>"), "File3.script", "center");
+		WORKBENCH.openView($("<view-console></view-console>"), "Console", "bottom");
+
 	}
 
 </script>

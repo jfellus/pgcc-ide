@@ -1,0 +1,70 @@
+
+<dom-module id="view-editor">
+<style>
+	svg {
+		width:100%; height:100%; box-sizing: border-box;
+	}
+
+	svg /deep/ rect.module {
+		stroke-width:1;
+		stroke:#666666;
+		fill:#DDDDDD;
+	}
+</style>
+<template>
+	<svg id="svg">
+		<g id="world">
+
+		</g>
+	</svg>
+</template>
+</dom-module>
+<script>
+
+function onScroll() {
+	alert("prout");
+}
+
+Polymer({
+	is: 'view-editor',
+	properties: {
+		zoom:{notify:true, observer:'updateEye', value:1.0},
+		offsetX:{notify:true, observer:'updateEye', value:0.0},
+		offsetY:{notify:true, observer:'updateEye', value:0.0}
+	},
+
+	attached: function() {
+		var that = this;
+
+		// Setup mouse navigation
+		this.zoomBehavior = d3.behavior.zoom().scaleExtent([0.04,200])
+		.on('zoomstart', function(){})
+		.on('zoom', function (){
+			d3.select(that.$.world).attr('transform', 'translate(' + d3.event.translate + '),scale(' + d3.event.scale + ')');
+		})
+		.on('zoomend', function(){});
+		d3.select(this.$.svg).call(this.zoomBehavior);
+		this.world = d3.select(this.$.world);
+
+
+		for(var i =0; i<1000; i++) {
+			this.addModule({x:Math.random()*1000, y:Math.random()*1000, name:"Module"+i});
+		}
+
+	},
+
+	addModule: function(m) {
+		this.world.append("rect")
+			.classed("module", true)
+    		.attr("rx", 6)
+    		.attr("ry", 6)
+    		.attr("x", m.x)
+    		.attr("y", m.y)
+    		.attr("width", 85)
+    		.attr("height", 65);
+	}
+
+});
+
+
+</script>
