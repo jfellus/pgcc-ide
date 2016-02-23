@@ -36,12 +36,13 @@
 #header > div {
 	position:relative;
 	display:inline-block;
-	padding:6px;
+	padding:3px;
 	color:rgba(0,0,0,0.66);
 	/*transition:all 0.2s;*/
 	cursor:hand;
 	max-width:200px;
 	white-space: nowrap;
+	overflow: hidden;
 }
 
 
@@ -127,7 +128,7 @@ td:first-child { overflow:hidden; text-align:right; white-space: nowrap;}
 	<div id="header">
 		<span id="botline"></span>
 		<template is="dom-repeat" items="{{tabs}}">
-			<div on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">
+			<div id="tab" on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">
 				<span class="umbrella"></span>
 				<table><tr><td><span class="name">{{item}}</span></td><td width="20px"><span class="close" on-tap="closeTab"></span></td></tr></table>
 			</div>
@@ -184,6 +185,7 @@ Polymer({
 
 	closeTab: function(tab) {
 		var that = this;
+
 		if(tab && typeof(tab)==="string") {
 			var i = this.tabs.indexOf(tab);
 			if(this.selectedTab === tab) {
@@ -195,7 +197,7 @@ Polymer({
 		}
 		else if(tab.target) {
 			tab.stopPropagation(); tab.preventDefault();
-			return this.closeTab(this.tabId($(tab.target).parent()));
+			return this.closeTab(this.tabId($(tab.target).parents("#tab")));
 		}
 	},
 
@@ -204,13 +206,13 @@ Polymer({
 		if(tab && typeof(tab) ==="string") {
 			return $(that.$.content).children("[label='"+tab+"']");
 		} else if($(tab).text()){
-			var tabId = $(tab).text();
+			var tabId = $(tab).text().trim();
 			return that.getTabContent(tab);
 		}
 	},
 
 	tabId: function(tab) {
-		return $(tab).text();
+		return $(tab).text().trim();
 	},
 
 	computeClass: function(tab) { return tab===this.selectedTab ? "active" : ""; }
