@@ -103,7 +103,7 @@ span.close:hover {
 	<div id="header">
 		<span id="botline"></span>
 		<template is="dom-repeat" items="{{tabs}}">
-			<div on-tap="selectTab">{{item}}<span class="close" on-tap="closeTab"></span></div>
+			<div on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">{{item}}<span class="close" on-tap="closeTab"></span></div>
 		</template>
 	</div>
 	<div id="content">
@@ -115,19 +115,21 @@ span.close:hover {
 Polymer({
 	is: 'tabbed-pane',
 	properties: {
-		selected:{notify:true},
-		tabs:{notify:false,value:[]}
+		selectedTab:{notify:true, value:null}
 	},
 
 	attached: function () {
-		if(this.tabs.length != 0) return;
-		this.selectTab($(this.$.header).children().eq(1));
+		var that = this;
+		if(!this.tabs) this.tabs = [];
 
 		for(var i =0; i<3; i++) {
-			var e = document.createElement("div");
-			$(e).html("prout "+ i);
-			$(e).attr("label", "Prout"+i);
-			this.addTab(e);
+			setTimeout(function(){
+				var e = document.createElement("div");
+				var z = Math.round(Math.random()*10);
+				$(e).html("Content" + z);
+				$(e).attr("label", "Tab"+z);
+				that.addTab(e);
+			}, 100);
 		}
 	},
 
@@ -135,52 +137,66 @@ Polymer({
 		var label = element.label;
 		if(!label) label = $(element).attr("label");
 		if(!label) label = element.tagName;
+		if(this.tabs.indexOf(label)!==-1) { console.log("ALready " + this.tabs + " = " + label); return false;}
 
 		$(element).attr("label", label);
 		$(element).hide();
 		$(this.$.content).append($(element));
 		this.push('tabs', label);
-		this.selectTab(label);
+		this.async(function(){this.selectTab(label);});
+		return true;
 	},
 
 	selectTab: function(tab) {
 		var that = this;
 		if(tab && typeof(tab)==="string") {
-			$(this.$.header).children().each(function() {
-				$(this).removeClass("active");
-				var tabId = $(this).text().replace(" ", "");
-				var tabContent = $(that.$.content).children("[label='"+tabId+"']");
+			this.tabs.forEach(function(tabId){
+				var tabContent = that.getTabContent(tabId);
 				tabContent.hide();
 				if(tabId !== tab) return;
-				$(this).addClass("active");
 				tabContent.show();
 			});
+			this.selectedTab = tab;
 		} else if(tab.target) {
 			tab.stopPropagation(); tab.preventDefault();
-			var tabId = $(tab.target).text().replace(" ", "");
-			return this.selectTab(tabId);
-		} else if(tab.text) {
-			var tabId = $(tab).text().replace(" ", "");
-			return this.selectTab(tabId);
+			return this.selectTab(this.tabId(tab.target));
+		} else if(tab.text && $(tab).text()) {
+			return this.selectTab(this.tabId(tab));
 		}
 	},
 
 	closeTab: function(tab) {
 		var that = this;
 		if(tab && typeof(tab)==="string") {
-			$(this.$.header).children().each(function() {
-				var tabId = $(this).text().replace(" ", "");
-				if(tabId !== tab) return;
-				if($(this).hasClass("active")) that.selectTab($(this).next().length ? $(this).next() : $(this).prev());
-				that.splice('tabs', that.tabs.indexOf(tabId), 1);
-			});
+			var i = this.tabs.indexOf(tab);
+			if(this.selectedTab === tab) {
+				if(this.tabs.length > 1) this.selectTab(this.tabs[i+1 >= this.tabs.length ? i-1 : i+1]);
+				else this.selectedTab = null;
+			}
+			this.splice('tabs', i, 1);
+			this.getTabContent(tab).remove();
 		}
 		else if(tab.target) {
 			tab.stopPropagation(); tab.preventDefault();
-			var tabId = $(tab.target).parent().text().replace(" ", "");
-			return this.closeTab(tabId);
+			return this.closeTab(this.tabId($(tab.target).parent()));
 		}
-	}
+	},
+
+	getTabContent: function(tab) {
+		var that = this;
+		if(tab && typeof(tab) ==="string") {
+			return $(that.$.content).children("[label='"+tab+"']");
+		} else if($(tab).text()){
+			var tabId = $(tab).text().replace(" ", "");
+			return that.getTabContent(tab);
+		}
+	},
+
+	tabId: function(tab) {
+		return $(tab).text().replace(" ", "");
+	},
+
+	computeClass: function(tab) { return tab===this.selectedTab ? "active" : ""; }
 });
 
 
