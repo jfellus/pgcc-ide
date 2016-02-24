@@ -6,10 +6,31 @@
 	}
 
 	svg /deep/ rect.module {
+		z-index:10;
 		stroke-width:1;
 		stroke:#666666;
 		fill:#DDDDDD;
 	}
+
+	svg /deep/ text.module {
+		font-size:11px;
+	}
+
+	svg /deep/ rect.pin {
+		stroke:none;
+		fill:black;
+	}
+	svg /deep/ text.pin {
+		font-size:10px;
+	}
+
+	svg /deep/ path {
+		stroke-width:1;
+		stroke:black;
+		z-index:-11;
+		fill:none;
+	}
+
 </style>
 <template>
 	<svg id="svg">
@@ -21,20 +42,42 @@
 </dom-module>
 <script>
 
-function onScroll() {
-	alert("prout");
+
+function Module(name) {
+	this.x = Math.random()*1000;
+	this.y = Math.random()*700,
+	this.name = name;
+
+	this.pins = [
+			{ name:"VCC", side:"left" },
+			{ name:"Vin", side:"left"},
+			{ name:"OV", side:"left"},
+			{ name:"learn", side:"top"},
+			{ name:"RX", side:'right'},
+			{ name:"TX", side:"right"}
+		];
+
+	this.moveListeners = [];
 }
+
+Module.prototype.onMove = function(callback) {
+	this.moveListeners.push(callback);
+};
+
+
+
+
 
 Polymer({
 	is: 'view-editor',
 	properties: {
-		zoom:{notify:true, observer:'updateEye', value:1.0},
-		offsetX:{notify:true, observer:'updateEye', value:0.0},
-		offsetY:{notify:true, observer:'updateEye', value:0.0}
 	},
 
 	attached: function() {
 		var that = this;
+		var _zooming = false;
+
+		this.modules = [];
 
 		// Setup mouse navigation
 		this.zoomBehavior = d3.behavior.zoom().scaleExtent([0.04,200])
@@ -44,24 +87,138 @@ Polymer({
 		})
 		.on('zoomend', function(){});
 		d3.select(this.$.svg).call(this.zoomBehavior);
+
+		// Pan view only with middle mouse button
+		var fn_mousemove = d3.select(this.$.svg).on("mousedown.zoom");
+		d3.select(this.$.svg).on("mousedown.zoom", function(){
+			if(d3.event.which === 2) return fn_mousemove.apply(this, arguments);
+		});
+
 		this.world = d3.select(this.$.world);
 
+		for(var i =0; i<100; i++) {
+			this.addModule(new Module("Module"+i));
+		}
 
-		for(var i =0; i<1000; i++) {
-			this.addModule({x:Math.random()*1000, y:Math.random()*1000, name:"Module"+i});
+		for(var i=0; i<100; i++) {
+			var src = "Module"+Math.floor(Math.random()*100);
+			var dst = "Module"+Math.floor(Math.random()*100);
+			this.connect(src, dst, "VCC", "RX");
 		}
 
 	},
 
+	getModule: function(name) {
+		var m = this.modules.filter(function(m){return m.name === name; });
+		return m.length ? m[0] : null;
+	},
+
 	addModule: function(m) {
-		this.world.append("rect")
+		var that = this;
+
+		var module = this.world.append("g")
+			.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
+
+		m.component = module;
+		m.pinCoords = {};
+
+		var w = 85;
+		var h = 65;
+
+		var dragBehavior = d3.behavior.drag()
+	      .on("drag", function() {
+			  	if(d3.event.sourceEvent.which !== 1) return;
+			  	var tr = d3.transform(d3.select(this).attr("transform"));
+				tr.translate[0] += d3.event.dx;
+	            tr.translate[1] += d3.event.dy;
+				m.x = tr.translate[0];
+				m.y = tr.translate[1];
+
+				for(var i in m.pinCoords) {
+					m.pinCoords[i].x += d3.event.dx;
+					m.pinCoords[i].y += d3.event.dy;
+				}
+
+	            d3.select(this).attr("transform", "translate("+tr.translate+")");
+				m.moveListeners.forEach(function(cb) { cb.bind(m)(); });
+	      });
+		module.call(dragBehavior);
+
+		module.append("rect")
 			.classed("module", true)
-    		.attr("rx", 6)
-    		.attr("ry", 6)
-    		.attr("x", m.x)
-    		.attr("y", m.y)
-    		.attr("width", 85)
-    		.attr("height", 65);
+			.attr("x", -w/2)
+			.attr("y", -h/2)
+    		.attr("rx", 3)
+    		.attr("ry", 3)
+    		.attr("width", w)
+    		.attr("height", h);
+
+		module.append("text")
+			.classed("module", true)
+			.text(m.name)
+			.attr('text-anchor',"middle")
+			.attr('y', h/2+2)
+			.attr("dominant-baseline", "text-before-edge");
+
+		function addPin(name, side, pct) {
+			var x,y;
+			var MARG = 1;
+			if(side=="left") { x = -w/2; y = (pct-0.5)*MARG*h; }
+			else if(side=="right") { x = w/2; y = (pct-0.5)*MARG*h; }
+			else if(side=="top") { x = (pct-0.5)*MARG*w; y = -h/2; }
+			else if(side=="bottom") { x = (pct-0.5)*MARG*w; y = h/2; }
+			else return;
+			var pin = module.append("rect")
+				.classed("pin", true)
+				.attr("x", x-5/2)
+				.attr("y", y-5/2)
+				.attr("rx", 1)
+				.attr("ry", 1)
+				.attr("width", 5)
+				.attr("height", 5);
+			module.append("text")
+				.classed("pin", true)
+				.attr("x", side==="top" || side==="bottom" ? x : side==="left" ? x + 3 : x - 3)
+				.attr("y", side==="left" || side==="right" ? y : side==="top" ? y + 3 : y - 3)
+				.attr("dominant-baseline", side==="left" || side==="right" ? "central" : side==="top" ?  "text-before-edge" : "text-after-edge" )
+				.attr("text-anchor", side==="top" || side==="bottom" ? "middle" : side==="left" ? "start" : "end")
+				.text(name);
+
+			var ctm = pin.node().getCTM();
+			m.pinCoords[name] = {x:ctm.e+x,y:ctm.f+y};
+		}
+
+		["left", "right", "top", "bottom"].forEach(function(side){
+			var pins = m.pins.filter(function(p){return p.side === side; });
+			for(var i=0; i<pins.length; i++) {
+				addPin(pins[i].name, side, (i+1)/(pins.length+1));
+			}
+		});
+
+		this.push("modules", m);
+	},
+
+	connect: function(src, dst, srcPin, dstPin) {
+		if(typeof(src) === 'string' && src.indexOf(".")!==-1) { srcPin = src.split(".")[1]; src = src.split(".")[0];  }
+		if(typeof(dst) === 'string' && dst.indexOf(".")!==-1) { dstPin = dst.split(".")[1]; dst = dst.split(".")[0];  }
+		if(typeof(src) === 'string') src = this.getModule(src);
+		if(typeof(dst) === 'string') dst = this.getModule(dst);
+		if(!src || !dst) throw "No such modules (" + src + " -> " + dst + ")";
+
+		function bezier(x1,y1,x2,y2) {
+			return "M"+[x1,y1]+" C"+[x2,y1,x1,y2,x2,y2];
+		}
+
+		var line = this.world.insert("path", "g")
+			.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
+
+
+		src.onMove(function(){
+			line.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
+		});
+		dst.onMove(function(){
+			line.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
+		});
 	}
 
 });
