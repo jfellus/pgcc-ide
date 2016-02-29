@@ -20,6 +20,7 @@
 	<link rel="import" href="./views/view-explorer.html">
 	<link rel="import" href="./views/view-console.html">
 	<link rel="import" href="./views/view-editor.html">
+	<link rel="import" href="./views/view-properties.html">
 </head>
 <body>
 	<pgcc-workbench>
@@ -43,7 +44,7 @@
 		else Commands.Open("/home/jfellus/q/pgccjs/test.script");
 
 		WORKBENCH.openView($("<view-explorer></view-explorer>"), "Projects", "left");
-		WORKBENCH.openView($("<div>Properties</div>"), "Properties", "right");
+		WORKBENCH.openView($("<view-properties></view-properties>"), "Properties", "right");
 		// WORKBENCH.openView($("<div>Libraries</div>"), "Libraries", "left");
 		// WORKBENCH.openView($("<div>Includes</div>"), "Includes", "left");
 		WORKBENCH.openView($("<view-editor file='File1.script'></view-editor>"), "File1.script", "center");
