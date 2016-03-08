@@ -155,6 +155,7 @@ Polymer({
 	},
 
 	addTab: function(element) {
+		var that = this;
 		var label = element.label;
 		if(!label) label = $(element).attr("label");
 		if(!label) label = element.tagName;
@@ -163,6 +164,19 @@ Polymer({
 		$(element).attr("label", label);
 		$(element).hide();
 		$(this.$.content).append($(element));
+
+		$(element).get(0).addEventListener('label', function(e) {
+			var newLabel = e.detail;
+			if(newLabel === label) return;
+			that.closeTab(newLabel);
+			that.set('tabs', that.tabs.map(function(t) { return t===label ? newLabel : t; }));
+			$(element).attr("label", newLabel);
+			label = newLabel;
+			that.async(function(){that.selectTab(newLabel);});
+		});
+
+		$(element).on('close', function() { that.closeTab(label, true); });
+
 		this.push('tabs', label);
 		this.async(function(){this.selectTab(label);});
 		return true;
@@ -176,6 +190,8 @@ Polymer({
 				tabContent.hide();
 				if(tabId !== tab) return;
 				tabContent.show();
+				tabContent.focus();
+				if(tabContent.get(0).onFocus) tabContent.get(0).onFocus();
 			});
 			this.selectedTab = tab;
 		} else if(tab.target) {
@@ -186,11 +202,12 @@ Polymer({
 		}
 	},
 
-	closeTab: function(tab) {
+	closeTab: function(tab, force) {
 		var that = this;
-
 		if(tab && typeof(tab)==="string") {
 			var i = this.tabs.indexOf(tab);
+			if(i===-1) return;
+			if(force!==true && $(this.getTabContent(tab)).get(0).close) return $(this.getTabContent(tab)).get(0).close();
 			if(this.selectedTab === tab) {
 				if(this.tabs.length > 1) this.selectTab(this.tabs[i+1 >= this.tabs.length ? i-1 : i+1]);
 				else this.selectedTab = null;
@@ -200,7 +217,7 @@ Polymer({
 		}
 		else if(tab.target) {
 			tab.stopPropagation(); tab.preventDefault();
-			return this.closeTab(this.tabId($(tab.target).parents("#tab")));
+			return this.closeTab(this.tabId($(tab.target).parents("#tab")), force);
 		}
 	},
 

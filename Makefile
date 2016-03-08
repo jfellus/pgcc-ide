@@ -20,4 +20,4 @@ install: bin/pgcc-ide.nw
 	@update-mime-database /usr/share/mime
 
 watch:
-	while true; do inotifywait src src/*; make; done
+	./watch.sh

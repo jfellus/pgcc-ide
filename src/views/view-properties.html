@@ -1,0 +1,82 @@
+
+<dom-module id="view-properties">
+<style>
+	table { width:100%; height:auto; padding:0; margin:0;}
+	td { padding: 2px 8px; border-bottom:1px solid #dddddd;}
+	td:first-child { font-weight:bold; background:#eeeeee; width:0px; }
+</style>
+<template>
+	<table cellspacing=0 cellpadding=0 border=0>
+	<template is="dom-repeat" items='{{getProperties(selection)}}'>
+		<tr><td width="1%">{{item.key}}</td><td width='100%' contenteditable="true" on-focus="focus" on-keydown="keydown" on-keypress="keypress">{{item.value}}</td></tr>
+	</template>
+	</table>
+</template>
+</dom-module>
+<script>
+
+
+Polymer({
+	is: 'view-properties',
+	properties: {
+		selection:{notify:true,value:null}
+	},
+
+	attached: function() {
+		this.selection = {
+			x:0,y:0,z:10,
+			properties: [ 'x', 'y', 'z', 'name'],
+			setProperty: function(k, v) { this[k] = v; },
+			getProperty: function(k) { return this[k]; },
+			getProperties: function() { return this.properties; }
+		};
+	},
+
+	getProperties: function(selection) {
+		try {
+			var that = this;
+			var p = this.selection.getProperties();
+			return p.map(function(k) { return {key:k, value:that.selection[k]};  });
+		} catch(e) { return [];}
+	},
+
+	focus:function(e) {
+		e.target.setAttribute("last-value", $(e.target).text());
+	},
+
+	keydown: function(e) {
+		ZOB = e;
+		if(e.keyIdentifier === "Escape" || e.which===27) {
+			$(e.target).text(e.target.getAttribute("last-value"));
+		   e.preventDefault();
+		   e.target.blur();
+	   }
+   },
+
+	keypress: function(e) {
+		if(e.keyIdentifier === "Enter") {
+			e.preventDefault();
+			this.onSetValue(e.srcElement);
+			e.target.blur();
+		}
+	},
+
+
+	onSetValue: function(elt) {
+		if(!this.validate($(elt).prev().text(), $(elt).text())) {
+			$(elt).text($(elt).attr("last-value"));
+		} else {
+			this.selection.setProperty($(elt).prev().text(), $(elt).text());
+		}
+	},
+
+	validate: function(property, value) {
+		return true;
+	}
+
+
+
+});
+
+
+</script>

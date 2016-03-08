@@ -64,26 +64,26 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 
 	<table border=0 cellpadding=0 cellspacing=0><tr><td style="padding:1px;">
 		<tool-bar id="toolbar">
-			<item>New</item>
-			<item>Open</item>
-			<item>Save</item>
-			<item>SaveAs</item>
-			<item>Close</item>
+			<item key="ctrl+N">New</item>
+			<item key="ctrl+O">Open</item>
+			<item key="ctrl+S">Save</item>
+			<item key="ctrl+shift+S">SaveAs</item>
+			<item key="ctrl+W">Close</item>
 			<separator></separator>
-			<item>Undo</item>
-			<item>Redo</item>
-			<item>Cut</item>
-			<item>Copy</item>
-			<item>Paste</item>
+			<item key="ctrk+Z">Undo</item>
+			<item key="ctrl+shift+Z">Redo</item>
+			<item key="ctrl+X">Cut</item>
+			<item key="ctrl+C">Copy</item>
+			<item key="ctrl+V">Paste</item>
 			<separator></separator>
-			<item>CreateModule</item>
-			<item>CreateLink</item>
-			<item>Delete</item>
+			<item key="ctrl+M">CreateModule</item>
+			<item key="ctrl+L">CreateLink</item>
+			<item key="ctrl+D">Delete</item>
 			<separator></separator>
-			<item>Search</item>
+			<item key="ctrl+F">Search</item>
 			<separator></separator>
-			<item>Compile</item>
-			<item>Start</item>
+			<item key="ctrl+B">Compile</item>
+			<item key="ctrl+space">Start</item>
 			<item>Stop</item>
 		</tool-bar>
 	</td></tr>
@@ -116,7 +116,25 @@ Polymer({
 	is: 'pgcc-workbench',
 	properties: {
 		status:{notify:true},
-		views:{notify:true, value:[]}
+		views:{notify:true, value:[]},
+		curEditor:{notify:true, value:null}
+	},
+
+	bindKeyshortcut: function(keystroke, cmd) {
+		$(window).keydown(function(evt){
+			var key = keystroke.toLowerCase();
+			if(!evt.ctrlKey && key.indexOf("ctrl+")!==-1) return;
+			if(!evt.shiftKey && key.indexOf("shift+")!==-1) return;
+			if(!evt.altKey && key.indexOf("alt+")!==-1) return;
+			if(evt.ctrlKey && key.indexOf("ctrl+")===-1) return;
+			if(evt.shiftKey && key.indexOf("shift+")===-1) return;
+			if(evt.altKey && key.indexOf("alt+")===-1) return;
+			var key = key.split("+"); key = key[key.length-1].toUpperCase();
+			if( (key === String.fromCharCode(evt.keyCode))
+			 || (key === "SPACE" && evt.keyCode === 32)
+			 || (key === "ESCAPE" && evt.keyCode === 27)
+			 || (key === "ENTER" && evt.keyCode === 13) ) WORKBENCH.command(cmd);
+		});
 	},
 
 	attached: function () {
@@ -151,6 +169,7 @@ Polymer({
 			$(this).text("");
 			$(this).html("<img class='pgcc-workbench' src='"+icon+"' alt='"+cmd+"' title='"+cmd+"'>");
 			$(this).click(function(){ WORKBENCH.command(cmd); });
+			if($(this).attr("key")) WORKBENCH.bindKeyshortcut($(this).attr("key"), cmd);
 		});
 
 		setTimeout(main, 200);
@@ -177,7 +196,13 @@ Polymer({
 		this.push('views', {content:view, location:location, label:label});
 		$(view).attr("location", location);
 		$(view).attr("label", label);
+
 		this.$[location].addTab(view);
+	},
+
+	openEditor: function(filename) {
+		if(filename) this.openView($("<view-editor filename='"+filename+"'></view-editor>"), filename , "center");
+		else this.openView($("<view-editor></view-editor>"), "new", "center");
 	},
 
 	closeView: function(label) {
@@ -188,8 +213,36 @@ Polymer({
 	getView: function(label) {
 		var v = this.views.filter(function(v) {return v.label === label;});
 		return v.length ? v[0] : null;
-	}
+	},
 
+	/////////////
+	// EDITORS //
+	/////////////
+
+	newDocument: function() {
+		this.openEditor();
+	},
+
+	open: function(filename) {
+		this.openEditor(filename);
+	},
+
+	save: function() {
+		if(!this.curEditor || !this.curEditor.modified) return;
+		this.curEditor.save();
+	},
+
+	saveAs: function(filename) {
+		var that = this;
+		if(!this.curEditor) return;
+		if(!filename) return file_open_dialog(function(f){ if(f) that.saveAs(f); }, "*.*");
+		this.curEditor.saveAs(filename);
+	},
+
+	close: function() {
+		if(!this.curEditor) return;
+		this.curEditor.close();
+	}
 });
 
 

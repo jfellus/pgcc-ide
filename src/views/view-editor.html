@@ -31,17 +31,25 @@
 		fill:none;
 	}
 
+	svg /deep/ .selected rect.module,
+	svg /deep/ path.selected {
+		stroke-width:3;
+		stroke:red;
+	}
+
+	#loading { position:absolute; top:0; left:0; bottom:0; right:0; background:#dddddd; color:#777777; font-size:20px; font-weight:bold; display:flex; justify-content: center; align-items: center; }
+
 </style>
 <template>
+	<div id="loading">Loading ...</div>
 	<svg id="svg">
-		<g id="world">
-
-		</g>
+		<g id="world"></g>
 	</svg>
 </template>
 </dom-module>
 <script>
 
+var PGCC = require("pgcc");
 
 function Module(name) {
 	this.x = Math.random()*1000;
@@ -60,17 +68,29 @@ function Module(name) {
 	this.moveListeners = [];
 }
 
-Module.prototype.onMove = function(callback) {
-	this.moveListeners.push(callback);
+
+function Link(src, dst, srcPin, dstPin) {
+	this.src = src;
+	this.dst = dst;
+	this.srcPin = srcPin;
+	this.dstPin = dstPin;
 };
 
 
 
 
+var LAST_NEW_DOC = 0;
+
 
 Polymer({
 	is: 'view-editor',
 	properties: {
+		selection: {notify:true, value:null},
+		modified: {notify:true, observer:"onModifiedChanged"},
+		filename: {notify:true}
+	},
+	observers: {
+		'loaded': 'onLoaded'
 	},
 
 	attached: function() {
@@ -94,18 +114,71 @@ Polymer({
 			if(d3.event.which === 2) return fn_mousemove.apply(this, arguments);
 		});
 
+		this.$.svg.addEventListener("click", function() {that.unselect();});
+
 		this.world = d3.select(this.$.world);
 
-		for(var i =0; i<100; i++) {
-			this.addModule(new Module("Module"+i));
-		}
 
-		for(var i=0; i<100; i++) {
-			var src = "Module"+Math.floor(Math.random()*100);
-			var dst = "Module"+Math.floor(Math.random()*100);
-			this.connect(src, dst, "VCC", "RX");
-		}
+		if(this.filename) this.async(function() {this.open(this.filename); });
+		else this.async(function() {this.newDocument();})
+	},
 
+	newDocument: function() {
+		this.filename = "NewScript_"+(LAST_NEW_DOC++)+".script";
+		this.fire("label", this.filename);
+		this.script = new PGCC.Script();
+		this.onLoaded();
+		this.modified = true;
+	},
+
+	open: function(filename) {
+		var that = this;
+		this.filename = filename;
+		this.script = new PGCC.Script(filename);
+		if(!this.script) throw "Script can't be loaded " + filename;
+
+		this.script.on("loaded", function() {
+			that.script.modules.forEach(function(m) { that.addModule(m); });
+			that.script.links.forEach(function(l) {	that.addLink(l); });
+			setTimeout(function() {that.onLoaded();},10);
+		});
+
+	},
+
+	close: function() {
+		var that = this;
+		if(!this.modified) return this.fire("close");
+		if(confirm(this.filename + " has been modified. Save changes ?")) {
+			this.save();
+			setTimeout(function(){that.fire("close");}, 40);
+		}
+	},
+
+	save: function() {
+		alert("Save " + this.filename);
+		// TODO
+		this.modified = false;
+	},
+
+	saveAs: function(filename) {
+		alert('Save ' + this.filename + " as " + filename);
+
+		// TODO
+
+		this.filename = filename;
+		this.fire("label", this.filename);
+		this.modified = false;
+	},
+
+
+
+	onLoaded: function() {
+		this.modified = false;
+		$(this.$.loading).fadeOut();
+	},
+
+	onFocus: function() {
+		WORKBENCH.curEditor = this;
 	},
 
 	getModule: function(name) {
@@ -115,6 +188,7 @@ Polymer({
 
 	addModule: function(m) {
 		var that = this;
+		if(!m.x || !m.y) { m.x = Math.random()*100; m.y = Math.random()*100; }
 
 		var module = this.world.append("g")
 			.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
@@ -125,9 +199,18 @@ Polymer({
 		var w = 85;
 		var h = 65;
 
+		module.moveListeners = [];
+		module.onMove = function(callback) {
+			this.moveListeners.push(callback);
+		};
+
+
 		var dragBehavior = d3.behavior.drag()
 	      .on("drag", function() {
 			  	if(d3.event.sourceEvent.which !== 1) return;
+
+				that.select(m);
+
 			  	var tr = d3.transform(d3.select(this).attr("transform"));
 				tr.translate[0] += d3.event.dx;
 	            tr.translate[1] += d3.event.dy;
@@ -140,7 +223,8 @@ Polymer({
 				}
 
 	            d3.select(this).attr("transform", "translate("+tr.translate+")");
-				m.moveListeners.forEach(function(cb) { cb.bind(m)(); });
+				module.moveListeners.forEach(function(cb) { cb.bind(m)(); });
+				that.modified = true;
 	      });
 		module.call(dragBehavior);
 
@@ -155,7 +239,7 @@ Polymer({
 
 		module.append("text")
 			.classed("module", true)
-			.text(m.name)
+			.text(m.class + " " + m.id)
 			.attr('text-anchor',"middle")
 			.attr('y', h/2+2)
 			.attr("dominant-baseline", "text-before-edge");
@@ -188,37 +272,92 @@ Polymer({
 			m.pinCoords[name] = {x:ctm.e+x,y:ctm.f+y};
 		}
 
-		["left", "right", "top", "bottom"].forEach(function(side){
-			var pins = m.pins.filter(function(p){return p.side === side; });
-			for(var i=0; i<pins.length; i++) {
-				addPin(pins[i].name, side, (i+1)/(pins.length+1));
-			}
-		});
+		if(m.pins) {
+			["left", "right", "top", "bottom"].forEach(function(side){
+				var pins = m.pins.filter(function(p){return p.side === side; });
+				for(var i=0; i<pins.length; i++) {
+					addPin(pins[i].name, side, (i+1)/(pins.length+1));
+				}
+			});
+		}
+
+		module.node().addEventListener("click", function(e) { that.select(m); e.stopPropagation(); });
 
 		this.push("modules", m);
 	},
 
+	addLink: function(link) {
+
+		function getSrcPoint() {
+			var ptSrc = link.src;
+			if(link.srcPin && ptSrc.pinCoords[link.srcPin]) ptSrc = ptSrc.pinCoords[link.srcPin];
+			return [ptSrc.x, ptSrc.y];
+		}
+
+		function getDstPoint() {
+			var ptDst = link.dst;
+			if(link.dstPin && ptDst.pinCoords[link.dstPin]) ptDst = ptDst.pinCoords[link.dstPin];
+			return [ptDst.x, ptDst.y];
+		}
+
+		function bezier() {
+			//	return "M"+[x1,y1]+" C"+[x2,y1,x1,y2,x2,y2];
+			return "M"+getSrcPoint()+ "L"+getDstPoint();
+		}
+
+		var line = this.world.insert("path", "g").attr("d", bezier());
+
+		link.component = line;
+
+		line.node().addEventListener("click", function(e) {
+			that.select(link); e.stopPropagation();
+		});
+
+		link.src.component.onMove(function(){ line.attr("d", bezier()); });
+		link.dst.component.onMove(function(){ line.attr("d", bezier()); });
+	},
+
+
 	connect: function(src, dst, srcPin, dstPin) {
+		var that = this;
 		if(typeof(src) === 'string' && src.indexOf(".")!==-1) { srcPin = src.split(".")[1]; src = src.split(".")[0];  }
 		if(typeof(dst) === 'string' && dst.indexOf(".")!==-1) { dstPin = dst.split(".")[1]; dst = dst.split(".")[0];  }
 		if(typeof(src) === 'string') src = this.getModule(src);
 		if(typeof(dst) === 'string') dst = this.getModule(dst);
 		if(!src || !dst) throw "No such modules (" + src + " -> " + dst + ")";
 
-		function bezier(x1,y1,x2,y2) {
-			return "M"+[x1,y1]+" C"+[x2,y1,x1,y2,x2,y2];
+		var link = new Link(src, dst, srcPin, dstPin);
+		this.addLink(link);
+		this.modified = true;
+	},
+
+
+
+	select: function(o) {
+		if(this.selection) {
+			var s = this.selection.component;
+			if(!s) s = this.selection;
+			s.classed("selected", false);
 		}
+		this.selection = o;
+		var s = this.selection.component;
+		if(!s) s = this.selection;
+		s.classed("selected", true);
+	},
 
-		var line = this.world.insert("path", "g")
-			.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
+	unselect: function() {
+		if(this.selection) {
+			var s = this.selection.component;
+			if(!s) s = this.selection;
+			s.classed("selected", false);
+		}
+		this.selection = null;
+	},
 
 
-		src.onMove(function(){
-			line.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
-		});
-		dst.onMove(function(){
-			line.attr("d", bezier(src.pinCoords[srcPin].x,src.pinCoords[srcPin].y, dst.pinCoords[dstPin].x, dst.pinCoords[dstPin].y));
-		});
+	onModifiedChanged: function() {
+		if(this.modified) this.fire("label", this.filename + "*");
+		else this.fire("label", this.filename);
 	}
 
 });

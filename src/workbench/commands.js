@@ -1,17 +1,14 @@
 Commands = {};
 
-Commands.New = function() {};
+Commands.New = function() { WORKBENCH.newDocument(); };
 Commands.Open = function(file) {
-	if(!file) {
-		return file_open_dialog(function(f){Commands.Open(f);}, "*.*");
-	}
-	else {
-		WORKBENCH.openView($("<div>Mon code pour " + file + "</div>"), file);
-	}
+	if(!file) return file_open_dialog(function(f){Commands.Open(f);}, "*.*");
+	else WORKBENCH.open(file);
 };
-Commands.Save = function() {};
-Commands.SaveAs = function() {};
-Commands.Close = function() {};
+Commands.Save = function() { WORKBENCH.save(); };
+
+Commands.SaveAs = function() { WORKBENCH.saveAs(); };
+Commands.Close = function() { WORKBENCH.close(); };
 
 Commands.Undo = function() {};
 Commands.Redo = function() {};

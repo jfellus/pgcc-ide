@@ -30,6 +30,7 @@
 <script>
 	var gui = require("nw.gui");
 	var WINDOW = require('nw.gui').Window.get();
+ 	require('process').chdir(process.env.PWD);
 
 	function DBG(x) {
 		WORKBENCH.status = x;
@@ -41,15 +42,12 @@
 		for(var i=0;i<gui.App.argv.length;i++) if(gui.App.argv[i][0]!='-') file = gui.App.argv[i];
 		if(file) Commands.Open(file);
 
-		else Commands.Open("/home/jfellus/q/pgccjs/test.script");
+		else WORKBENCH.open("test.script");
 
 		WORKBENCH.openView($("<view-explorer></view-explorer>"), "Projects", "left");
 		WORKBENCH.openView($("<view-properties></view-properties>"), "Properties", "right");
 		// WORKBENCH.openView($("<div>Libraries</div>"), "Libraries", "left");
 		// WORKBENCH.openView($("<div>Includes</div>"), "Includes", "left");
-		WORKBENCH.openView($("<view-editor file='File1.script'></view-editor>"), "File1.script", "center");
-		WORKBENCH.openView($("<view-editor file='File2.script'></view-editor>"), "File2.script", "center");
-		WORKBENCH.openView($("<view-editor file='File3.script'></view-editor>"), "File3.script", "center");
 		WORKBENCH.openView($("<view-console></view-console>"), "Console", "bottom");
 
 	}
