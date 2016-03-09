@@ -154,22 +154,17 @@ Polymer({
 		}
 	},
 
-	save: function() {
-		alert("Save " + this.filename);
-		// TODO
-		this.modified = false;
-	},
+	save: function() { return this.saveAs(this.filename); },
 
 	saveAs: function(filename) {
-		alert('Save ' + this.filename + " as " + filename);
-
-		// TODO
-
-		this.filename = filename;
-		this.fire("label", this.filename);
-		this.modified = false;
+		var that = this;
+		ZOB = this.script;
+		return this.script.write(filename).then(function() {
+			that.filename = filename;
+			that.fire("label", this.filename);
+			that.modified = false;
+		}).catch(function(e) { alert(e);});
 	},
-
 
 
 	onLoaded: function() {
@@ -188,7 +183,10 @@ Polymer({
 
 	addModule: function(m) {
 		var that = this;
-		if(!m.x || !m.y) { m.x = Math.random()*100; m.y = Math.random()*100; }
+		if(!m.x) m.x = m.params.x;
+		if(!m.y) m.y = m.params.y;
+		if(!m.x) m.params.x = m.x = Math.random()*1000;
+		if(!m.y) m.params.y = m.y = Math.random()*700;
 
 		var module = this.world.append("g")
 			.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
@@ -214,8 +212,8 @@ Polymer({
 			  	var tr = d3.transform(d3.select(this).attr("transform"));
 				tr.translate[0] += d3.event.dx;
 	            tr.translate[1] += d3.event.dy;
-				m.x = tr.translate[0];
-				m.y = tr.translate[1];
+				m.params.x = m.x = tr.translate[0];
+				m.params.y = m.y = tr.translate[1];
 
 				for(var i in m.pinCoords) {
 					m.pinCoords[i].x += d3.event.dx;
