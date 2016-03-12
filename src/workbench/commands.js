@@ -16,8 +16,8 @@ Commands.Cut = function() {};
 Commands.Copy = function() {};
 Commands.Paste = function() {};
 
-Commands.CreateModule = function() {};
-Commands.CreateLink = function() {};
+Commands.CreateModule = function() {WORKBENCH.createModule();};
+Commands.CreateLink = function() { WORKBENCH.createLink();};
 Commands.Delete = function() {};
 
 Commands.Search = function() {};

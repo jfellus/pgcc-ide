@@ -76,8 +76,8 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 			<item key="ctrl+C">Copy</item>
 			<item key="ctrl+V">Paste</item>
 			<separator></separator>
-			<item key="ctrl+M">CreateModule</item>
-			<item key="ctrl+L">CreateLink</item>
+			<item key="M">CreateModule</item>
+			<item key="L">CreateLink</item>
 			<item key="ctrl+D">Delete</item>
 			<separator></separator>
 			<item key="ctrl+F">Search</item>
@@ -257,6 +257,13 @@ Polymer({
 		this.last_hint = hint;
 		if(!hint || !this.curEditor) return;
 		this.curEditor.createModule(hint);
+	},
+
+	createLink: function(hint) {
+		if(!hint) hint = this.last_link_hint;
+		this.last_link_hint = hint;
+		if(!this.curEditor) return;
+		this.curEditor.createLink(hint);
 	},
 
 	////////////

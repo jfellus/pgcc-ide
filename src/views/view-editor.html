@@ -5,6 +5,7 @@ const util = require('util');
 <link rel="import" href="../components/ModuleComponent.html">
 <link rel="import" href="../components/LinkComponent.html">
 <link rel="import" href="../components/ModuleCreator.html">
+<link rel="import" href="../components/LinkCreator.html">
 
 
 <dom-module id="view-editor">
@@ -33,17 +34,24 @@ const util = require('util');
 	}
 
 	svg /deep/ path {
-		stroke-width:1;
+		stroke-width:2;
 		stroke:black;
 		z-index:-11;
 		fill:none;
+		cursor:hand;
+		marker-end:url(#end-mark);
+	}
+	svg /deep/ path:hover {
+		stroke-width:5;
 	}
 
 	svg /deep/ .selected rect.module,
 	svg /deep/ path.selected {
-		stroke-width:3;
+		stroke-width:6;
 		stroke:red;
 	}
+
+	marker#end-mark path { fill:black; }
 
 	#loading { position:absolute; top:0; left:0; bottom:0; right:0; background:#dddddd; color:#777777; font-size:20px; font-weight:bold; display:flex; justify-content: center; align-items: center; }
 
@@ -51,6 +59,11 @@ const util = require('util');
 <template>
 	<div id="loading">Loading ...</div>
 	<svg id="svg">
+		<defs>
+			<marker id="end-mark" viewBox="-100 -100 200 200"  markerWidth="8" markerHeight="8" orient='auto'>
+	 			 <--><path class='marker-path' d='M0,50 L100,0 L0,-50 Z'/>
+   			</marker>
+		</defs>
 		<g id="world"></g>
 	</svg>
 </template>
@@ -79,6 +92,7 @@ Polymer({
 		var _zooming = false;
 
 		this.modules = [];
+		this.links = [];
 
 		// Setup mouse navigation
 		this.zoomBehavior = d3.behavior.zoom().scaleExtent([0.04,200])
@@ -95,7 +109,16 @@ Polymer({
 			if(d3.event.which === 2) return fn_mousemove.apply(this, arguments);
 		});
 
-		this.$.svg.addEventListener("click", function() {that.unselect();});
+
+		$(this.$.svg).on("mousemove", function(evt){
+			if(that.creator && that.creator.onMousemove(evt)) return;
+			that.onMousemove(evt);
+		});
+
+		this.$.svg.addEventListener("click", function(evt) {
+			if(that.creator && that.creator.onClick(evt)) return;
+			that.unselect();
+		});
 
 		this.world = d3.select(this.$.world);
 
@@ -192,6 +215,8 @@ Polymer({
 		return s;
 	},
 
+	onMousemove: function(evt) {},
+
 	select: function(o) {
 		if(this.selection) this.getSelection().setSelected(false);
 		this.selection = o;
@@ -225,6 +250,15 @@ Polymer({
 
 		this.creator = new ModuleCreator(this, m);
 		this.creator.on("create", function() {that.push("modules", m);});
+	},
+
+	createLink: function(hint) {
+		if(!this.script) return;
+		if(this.creator) this.creator.cancel();
+
+		var l = new PGCC.Link(this.script, null, null);
+		this.creator = new LinkCreator(this, l);
+		this.creator.on("create", function() {that.push("links", l);});
 	},
 
 	clientToWorld: function(pt) {
