@@ -7,7 +7,7 @@
 </style>
 <template>
 	<table cellspacing=0 cellpadding=0 border=0>
-	<template is="dom-repeat" items='{{getProperties(selection)}}'>
+	<template id='list' is="dom-repeat" items='{{params}}'>
 		<tr><td width="1%">{{item.key}}</td><td width='100%' contenteditable="true" on-focus="focus" on-keydown="keydown" on-keypress="keypress">{{item.value}}</td></tr>
 	</template>
 	</table>
@@ -19,45 +19,60 @@
 Polymer({
 	is: 'view-properties',
 	properties: {
-		selection:{notify:true,value:null}
+		selection:{notify:true,value:null, observer:'onSelectionChanged'},
+		params:{notify:true}
 	},
 
 	attached: function() {
-		this.selection = {
-			x:0,y:0,z:10,
-			properties: [ 'x', 'y', 'z', 'name'],
-			setProperty: function(k, v) { this[k] = v; },
-			getProperty: function(k) { return this[k]; },
-			getProperties: function() { return this.properties; }
-		};
+		var that = this;
+		WORKBENCH.addEventListener("selection", function(evt) {that.set('selection', evt.detail.selection);});
+		WORKBENCH.addEventListener("modify", function(evt) {that.update();});
 	},
+
 
 	getProperties: function(selection) {
 		try {
-			var that = this;
-			var p = this.selection.getProperties();
-			return p.map(function(k) { return {key:k, value:that.selection[k]};  });
+			var params = selection.params;
+			if(!params) params = selection;
+			var p = [];
+			for(var i in params) p.push({key:i, value:params[i]});
+			return p;
 		} catch(e) { return [];}
 	},
 
 	focus:function(e) {
+		this.editedField = e.target;
 		e.target.setAttribute("last-value", $(e.target).text());
 	},
 
 	keydown: function(e) {
-		ZOB = e;
+		var that = this;
+		if(!this.editedField) return e.preventDefault();
+
+		function increment(amount) {
+			e.preventDefault();
+			var v = parseFloat($(e.target).text());
+			if(""+v === $(e.target).text()) v += amount;
+			$(e.target).text(v);
+			that.onSetValue(e.srcElement);
+		}
+
 		if(e.keyIdentifier === "Escape" || e.which===27) {
 			$(e.target).text(e.target.getAttribute("last-value"));
-		   e.preventDefault();
-		   e.target.blur();
-	   }
-   },
+			e.preventDefault();
+			e.target.blur();
+			this.editedField = null;
+		}
+		// else if(e.keyIdentifier === "Up") increment(1.0);
+		// else if(e.keyIdentifier === "Down") increment(-1.0);
+	},
 
 	keypress: function(e) {
 		if(e.keyIdentifier === "Enter") {
 			e.preventDefault();
 			this.onSetValue(e.srcElement);
 			e.target.blur();
+			this.editedField = null;
 		}
 	},
 
@@ -66,12 +81,29 @@ Polymer({
 		if(!this.validate($(elt).prev().text(), $(elt).text())) {
 			$(elt).text($(elt).attr("last-value"));
 		} else {
-			this.selection.setProperty($(elt).prev().text(), $(elt).text());
+			this.selection.set($(elt).prev().text(), $(elt).text());
 		}
 	},
 
 	validate: function(property, value) {
 		return true;
+	},
+
+	onSelectionChanged: function() {
+		if(this.editedField) $(this.editedField).blur();
+		this.editedField = null;
+		this.update();
+	},
+
+	update: function() {
+		var that = this;
+		if(this.updating) return;
+		this.updating = true;
+	 	setTimeout(function() {
+			that.set("params", []);
+			that.set("params", that.getProperties(that.selection));
+			that.updating = false;
+		}, 50);
 	}
 
 

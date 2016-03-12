@@ -117,7 +117,8 @@ Polymer({
 	properties: {
 		status:{notify:true},
 		views:{notify:true, value:[]},
-		curEditor:{notify:true, value:null}
+		curEditor:{notify:true, value:null, observer:'onCurEditorChanged' },
+		selection:{notify:true, value:null, observer:'onSelectionChanged'}
 	},
 
 	bindKeyshortcut: function(keystroke, cmd) {
@@ -198,11 +199,14 @@ Polymer({
 		$(view).attr("label", label);
 
 		this.$[location].addTab(view);
+
+		return $(view).get(0);
 	},
 
 	openEditor: function(filename) {
-		if(filename) this.openView($("<view-editor filename='"+filename+"'></view-editor>"), filename , "center");
-		else this.openView($("<view-editor></view-editor>"), "new", "center");
+		var editor;
+		if(filename) editor = this.openView($("<view-editor filename='"+filename+"'></view-editor>"), filename , "center");
+		else editor = this.openView($("<view-editor></view-editor>"), "new", "center");
 	},
 
 	closeView: function(label) {
@@ -242,7 +246,33 @@ Polymer({
 	close: function() {
 		if(!this.curEditor) return;
 		this.curEditor.close();
+	},
+
+	//////////////
+	// CREATORS //
+	//////////////
+
+	createModule: function(hint) {
+		if(!hint) hint = this.last_hint;
+		this.last_hint = hint;
+		if(!hint || !this.curEditor) return;
+		this.curEditor.createModule(hint);
+	},
+
+	////////////
+	// EVENTS //
+	////////////
+
+	onCurEditorChanged: function() {
+		this.selection = this.curEditor ? this.curEditor.selection : null;
+	},
+
+	onSelectionChanged: function() {
+		this.selection = this.curEditor ? this.curEditor.selection : null;
+		this.fire("selection", {selection:this.selection});
 	}
+
+
 });
 
 

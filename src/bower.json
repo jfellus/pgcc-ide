@@ -7,7 +7,7 @@
 		"Jerome Fellus <jfellus@gmail.com>"
 	],
 	"main": "index.html",
-	"license": "LGPL v3", 
+	"license": "LGPL v3",
 	"ignore": [
 		"**/.*",
 		"node_modules",
@@ -16,6 +16,7 @@
 		"tests"
 	],
 	"dependencies": {
-		"polymer": "Polymer/polymer"
+		"polymer": "Polymer/polymer",
+		"d3": "~3.5.6"
 	}
 }
