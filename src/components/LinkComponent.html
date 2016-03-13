@@ -84,5 +84,10 @@ LinkComponent.prototype.setSelected = function(bSelected) {
 	this.component.classed("selected", bSelected);
 }
 
+LinkComponent.prototype.remove = function() {
+	this.link.delete();
+	this.component.remove();
+}
+
 
 </script>

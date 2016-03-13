@@ -232,6 +232,11 @@ Polymer({
 		WORKBENCH.selection = this.selection;
 	},
 
+	delete: function() {
+		if(!this.selection) return;
+		this.getSelection().remove();
+		this.unselect();
+	},
 
 	onModifiedChanged: function() {
 		if(this.modified) this.fire("label", this.filename + "*");

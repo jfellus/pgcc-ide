@@ -18,7 +18,7 @@ Commands.Paste = function() {};
 
 Commands.CreateModule = function() {WORKBENCH.createModule();};
 Commands.CreateLink = function() { WORKBENCH.createLink();};
-Commands.Delete = function() {};
+Commands.Delete = function() { WORKBENCH.delete();};
 
 Commands.Search = function() {};
 

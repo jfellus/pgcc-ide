@@ -157,5 +157,11 @@ ModuleComponent.prototype.setSelected = function(bSelected) {
 	this.component.classed("selected", bSelected);
 }
 
+ModuleComponent.prototype.remove = function() {
+	this.m.outs.forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.ins.forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.delete();
+	this.component.remove();
+}
 
 </script>

@@ -78,7 +78,7 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 			<separator></separator>
 			<item key="M">CreateModule</item>
 			<item key="L">CreateLink</item>
-			<item key="ctrl+D">Delete</item>
+			<item key="suppr">Delete</item>
 			<separator></separator>
 			<item key="ctrl+F">Search</item>
 			<separator></separator>
@@ -134,7 +134,8 @@ Polymer({
 			if( (key === String.fromCharCode(evt.keyCode))
 			 || (key === "SPACE" && evt.keyCode === 32)
 			 || (key === "ESCAPE" && evt.keyCode === 27)
-			 || (key === "ENTER" && evt.keyCode === 13) ) WORKBENCH.command(cmd);
+			 || (key === "ENTER" && evt.keyCode === 13)
+		  	 || (key === "SUPPR" && evt.keyCode === 46)) WORKBENCH.command(cmd);
 		});
 	},
 
@@ -246,6 +247,11 @@ Polymer({
 	close: function() {
 		if(!this.curEditor) return;
 		this.curEditor.close();
+	},
+
+	delete: function() {
+		if(!this.curEditor) return;
+		this.curEditor.delete();
 	},
 
 	//////////////
