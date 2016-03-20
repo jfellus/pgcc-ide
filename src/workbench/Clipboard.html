@@ -32,23 +32,40 @@ Clipboard.prototype.copy = function(selection) {
 
 Clipboard.prototype.paste = function(editor, pos) {
 	if(!editor || !this.selection) return;
+	var that = this;
+
+	function createUniqueId(m) {
+		var _pos = m.id.lastIndexOf("_");
+		if(_pos!==-1 && !isNaN(parseFloat(m.id.substr(_pos+1)))) m.id = m.id.substr(0,_pos);
+
+		var i=1;
+		while (
+			editor.script.hasModule(m.id + "_" + i) ||
+			that.selection.filter(function(m1){
+				return m1.id === m.id + "_" + i;
+			}).length
+		) i++;
+		return m.id + "_" + i;
+	}
 
 	// Make every module unique
 	this.selection.forEach(function(m) {
-		if(!editor.script.hasModule(m.id)) return;
-		var _pos = m.id.lastIndexOf("_");
-		if(_pos!==-1 && !isNaN(parseFloat(m.id.substr(_pos+1)))) m.id = m.id.substr(0,_pos);
-		var i=1;
-		while(editor.script.hasModule(m.id + "_" + i)) i++;
-		m.id += "_" + i;
+		if(editor.script.hasModule(m.id)) m.id = createUniqueId(m);
 	});
 
 	// Position modules
-	if(pos && pos.x && pos.y)
-	this.selection.forEach(function(m) {
-		m.set('x', pos.x);
-		m.set('y', pos.y);
-	});
+	if(pos && pos.x && pos.y) {
+		var n = this.selection.length;
+		var sum = this.selection.reduce(function(prev, m){
+			return {x:prev.x + parseFloat(m.params.x), y:prev.y + parseFloat(m.params.y)};
+		}, {x:0, y:0});
+		var center = {x:sum.x/n, y:sum.y/n};
+
+		this.selection.forEach(function(m) {
+			m.set('x', parseFloat(m.params.x) - center.x + pos.x);
+			m.set('y', parseFloat(m.params.y) - center.y + pos.y);
+		});
+	}
 
 	this.selection.forEach(function(m) {
 		editor.script.addModule(m);

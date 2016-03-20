@@ -121,6 +121,7 @@ Polymer({
 			this.updating = false;
 		} else setTimeout(function() {
 			that.set("params", []);
+			if(!that.selection) return that.update();
 			that.set("params", that.getProperties(that.selection[0]));
 			that.updating = false;
 		}, 50);
