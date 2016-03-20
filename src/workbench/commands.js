@@ -10,11 +10,11 @@ Commands.Save = function() { WORKBENCH.save(); };
 Commands.SaveAs = function() { WORKBENCH.saveAs(); };
 Commands.Close = function() { WORKBENCH.close(); };
 
-Commands.Undo = function() {};
-Commands.Redo = function() {};
-Commands.Cut = function() {};
-Commands.Copy = function() {};
-Commands.Paste = function() {};
+Commands.Undo = function() { WORKBENCH.undo(); };
+Commands.Redo = function() { WORKBENCH.redo(); };
+Commands.Cut = function() {	WORKBENCH.cut();};
+Commands.Copy = function() { WORKBENCH.copy();};
+Commands.Paste = function() { WORKBENCH.paste();};
 
 Commands.CreateModule = function() {WORKBENCH.createModule();};
 Commands.CreateLink = function() { WORKBENCH.createLink();};

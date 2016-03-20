@@ -40,8 +40,7 @@ function ModuleComponent(editor, m) {
 		var value = evt.value;
 		if(key === "x") that.move(m.params.x, m.params.y);
 		else if(key === "y") that.move(m.params.x, m.params.y);
-		editor.modified = true;
-		WORKBENCH.fire("modify");
+		editor.notifyModify();
 	});
 
 
@@ -149,19 +148,16 @@ ModuleComponent.prototype.move = function(x,y) {
 	this.emit("move", {x:x,y:y});
 }
 
-ModuleComponent.prototype.onMove = function(callback) {
-	this.moveListeners.push(callback);
-};
-
 ModuleComponent.prototype.setSelected = function(bSelected) {
 	this.component.classed("selected", bSelected);
 }
 
 ModuleComponent.prototype.remove = function() {
-	this.m.outs.forEach(function(l) { if(l.component) l.component.remove();	});
-	this.m.ins.forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.outs.slice().forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.ins.slice().forEach(function(l) { if(l.component) l.component.remove();	});
 	this.m.delete();
 	this.component.remove();
+	this.editor.notifyModify();
 }
 
 </script>

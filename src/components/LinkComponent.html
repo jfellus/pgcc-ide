@@ -5,7 +5,6 @@
 function LinkComponent(editor, l) {
 	var that = this;
 	this.link = l;
-	ZOB = l;
 	this.editor = editor;
 
 	l.component = this;
@@ -20,8 +19,7 @@ function LinkComponent(editor, l) {
 		var value = evt.value;
 		if(key === "src") that.onSetSrc(value);
 		else if(key === "dst") that.onSetDst(value);
-		editor.modified = true;
-		WORKBENCH.fire("modify");
+		editor.notifyModify();
 	});
 
 	this.onSetSrc(this.link.src);
@@ -87,6 +85,7 @@ LinkComponent.prototype.setSelected = function(bSelected) {
 LinkComponent.prototype.remove = function() {
 	this.link.delete();
 	this.component.remove();
+	this.editor.notifyModify();
 }
 
 

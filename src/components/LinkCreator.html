@@ -37,6 +37,7 @@ LinkCreator.prototype.onClick = function(e) {
 
 LinkCreator.prototype.create = function() {
 	this.spot.remove();
+	this.component.attr("d", this._createPath());
 	if(this.editor.creator === this)  this.editor.creator = null;
 }
 

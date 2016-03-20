@@ -1,0 +1,68 @@
+<script>
+
+
+function Clipboard() {
+	this.selection = null;
+}
+
+Clipboard.prototype.cut = function(selection) {
+	if(!selection) return;
+	if(!Array.isArray(selection)) selection = [selection];
+	selection = selection.map(function(m) {return m.m ? m.m : m; });
+
+	selection.forEach(function(m) { if(m.component) m.component.remove(); });
+
+	this.selection = selection;
+}
+
+Clipboard.prototype.copy = function(selection) {
+	var that = this;
+	if(!selection) return;
+	if(!Array.isArray(selection)) selection = [selection];
+	selection = selection.map(function(m) {return m.m ? m.m : m;});
+
+	this.selection = [];
+	selection.forEach(function(m) {
+		var copy = new PGCC.Module(null);
+		m.copyTo(copy);
+		that.selection.push(copy);
+	});
+
+}
+
+Clipboard.prototype.paste = function(editor, pos) {
+	if(!editor || !this.selection) return;
+
+	// Make every module unique
+	this.selection.forEach(function(m) {
+		if(!editor.script.hasModule(m.id)) return;
+		var _pos = m.id.lastIndexOf("_");
+		if(_pos!==-1 && !isNaN(parseFloat(m.id.substr(_pos+1)))) m.id = m.id.substr(0,_pos);
+		var i=1;
+		while(editor.script.hasModule(m.id + "_" + i)) i++;
+		m.id += "_" + i;
+	});
+
+	// Position modules
+	if(pos && pos.x && pos.y)
+	this.selection.forEach(function(m) {
+		m.set('x', pos.x);
+		m.set('y', pos.y);
+	});
+
+	this.selection.forEach(function(m) {
+		editor.script.addModule(m);
+		editor.addModule(m);
+	});
+
+	var pasted = this.selection;
+	this.copy(pasted);
+	return pasted;
+}
+
+
+var CLIPBOARD = new Clipboard();
+
+
+
+</script>

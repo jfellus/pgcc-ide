@@ -4,6 +4,7 @@
 <link rel="import" href="../ui/tabbed-pane.html">
 
 
+
 <dom-module id="pgcc-workbench">
 <style>
 
@@ -111,7 +112,6 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 
 var WORKBENCH = null;
 
-
 Polymer({
 	is: 'pgcc-workbench',
 	properties: {
@@ -175,6 +175,7 @@ Polymer({
 		});
 
 		setTimeout(main, 200);
+
 	},
 
 	//////////////
@@ -253,6 +254,39 @@ Polymer({
 		if(!this.curEditor) return;
 		this.curEditor.delete();
 	},
+
+	//////////
+	// UNDO //
+	//////////
+
+	undo: function() {
+
+	},
+
+	redo: function() {
+
+	},
+
+
+	///////////////
+	// CLIPBOARD //
+	///////////////
+
+	cut: function() {
+		if(!this.curEditor) return;
+		this.curEditor.cut();
+	},
+
+	copy: function() {
+		if(!this.curEditor) return;
+		this.curEditor.copy();
+	},
+
+	paste: function() {
+		if(!this.curEditor) return;
+		this.curEditor.paste();
+	},
+
 
 	//////////////
 	// CREATORS //

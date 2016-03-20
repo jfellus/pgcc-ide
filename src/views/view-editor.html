@@ -6,6 +6,8 @@ const util = require('util');
 <link rel="import" href="../components/LinkComponent.html">
 <link rel="import" href="../components/ModuleCreator.html">
 <link rel="import" href="../components/LinkCreator.html">
+<link rel="import" href="../components/LinkCreator.html">
+<link rel="import" href="../workbench/Clipboard.html">
 
 
 <dom-module id="view-editor">
@@ -91,9 +93,6 @@ Polymer({
 		var that = this;
 		var _zooming = false;
 
-		this.modules = [];
-		this.links = [];
-
 		// Setup mouse navigation
 		this.zoomBehavior = d3.behavior.zoom().scaleExtent([0.04,200])
 		.on('zoomstart', function(){})
@@ -125,7 +124,13 @@ Polymer({
 
 		if(this.filename) this.async(function() {this.open(this.filename); });
 		else this.async(function() {this.newDocument();})
+
 	},
+
+
+	//////////////
+	// COMMANDS //
+	//////////////
 
 	newDocument: function() {
 		this.filename = "NewScript_"+(LAST_NEW_DOC++)+".script";
@@ -171,43 +176,10 @@ Polymer({
 	},
 
 
-	onLoaded: function() {
-		this.modified = false;
-		$(this.$.loading).fadeOut();
-	},
 
-	onFocus: function() {
-		WORKBENCH.curEditor = this;
-	},
-
-	getModule: function(name) {
-		var m = this.modules.filter(function(m){return m.name === name; });
-		return m.length ? m[0] : null;
-	},
-
-	addModule: function(m) {
-		m.component = new ModuleComponent(this, m);
-		this.push("modules", m);
-	},
-
-	addLink: function(l) {
-		l.component = new LinkComponent(this, l);
-	},
-
-
-	connect: function(src, dst, srcPin, dstPin) {
-		var that = this;
-		if(typeof(src) === 'string' && src.indexOf(".")!==-1) { srcPin = src.split(".")[1]; src = src.split(".")[0];  }
-		if(typeof(dst) === 'string' && dst.indexOf(".")!==-1) { dstPin = dst.split(".")[1]; dst = dst.split(".")[0];  }
-		if(typeof(src) === 'string') src = this.getModule(src);
-		if(typeof(dst) === 'string') dst = this.getModule(dst);
-		if(!src || !dst) throw "No such modules (" + src + " -> " + dst + ")";
-
-		var link = new Link(src, dst, srcPin, dstPin);
-		this.addLink(link);
-		this.modified = true;
-		WORKBENCH.fire("modify");
-	},
+	///////////////
+	// SELECTION //
+	///////////////
 
 	getSelection: function() {
 		var s = this.selection.component;
@@ -215,11 +187,9 @@ Polymer({
 		return s;
 	},
 
-	onMousemove: function(evt) {},
-
 	select: function(o) {
 		if(this.selection) this.getSelection().setSelected(false);
-		this.selection = o;
+		this.selection = Array.isArray(o) ? o[0] : o; // TODO Multiple selection
 		this.getSelection().setSelected(true);
 
 		WORKBENCH.selection = this.selection;
@@ -232,17 +202,44 @@ Polymer({
 		WORKBENCH.selection = this.selection;
 	},
 
+
+	/////////////
+	// EDITION //
+	/////////////
+
+	addModule: function(m) {
+		m.component = new ModuleComponent(this, m);
+	},
+
+	addLink: function(l) {
+		l.component = new LinkComponent(this, l);
+	},
+
 	delete: function() {
 		if(!this.selection) return;
 		this.getSelection().remove();
 		this.unselect();
+		this.notifyModify();
 	},
 
-	onModifiedChanged: function() {
-		if(this.modified) this.fire("label", this.filename + "*");
-		else this.fire("label", this.filename || "null");
+	connect: function(src, dst, srcPin, dstPin) {
+		if(!this.script) return;
+		var that = this;
+		if(typeof(src) === 'string' && src.indexOf(".")!==-1) { srcPin = src.split(".")[1]; src = src.split(".")[0];  }
+		if(typeof(dst) === 'string' && dst.indexOf(".")!==-1) { dstPin = dst.split(".")[1]; dst = dst.split(".")[0];  }
+		if(typeof(src) === 'string') src = this.script.getModule(src);
+		if(typeof(dst) === 'string') dst = this.script.getModule(dst);
+		if(!src || !dst) throw "No such modules (" + src + " -> " + dst + ")";
+
+		this.addLink(new Link(src, dst, srcPin, dstPin));
+		this.notifyModify();
 	},
 
+
+
+	//////////////
+	// CREATORS //
+	//////////////
 
 	createModule: function(hint) {
 		if(!this.script) return;
@@ -263,7 +260,39 @@ Polymer({
 
 		var l = new PGCC.Link(this.script, null, null);
 		this.creator = new LinkCreator(this, l);
-		this.creator.on("create", function() {that.push("links", l);});
+	},
+
+
+	///////////////
+	// CLIPBOARD //
+	///////////////
+
+	cut: function() {
+		if(!this.selection) return;
+		CLIPBOARD.cut(this.selection);
+		this.unselect();
+		this.notifyModify();
+	},
+
+	copy: function() {
+		if(!this.selection) return;
+		CLIPBOARD.copy(this.selection);
+	},
+
+	paste: function() {
+		var pasted = CLIPBOARD.paste(this, this.mousePosWorld);
+		this.select(pasted);
+		this.notifyModify();
+	},
+
+
+	////////////
+	// EVENTS //
+	////////////
+
+	onMousemove: function(evt) {
+		this.mousePos = {x:evt.offsetX, y:evt.offsetY};
+		this.mousePosWorld = this.clientToWorld(this.mousePos);
 	},
 
 	clientToWorld: function(pt) {
@@ -271,6 +300,25 @@ Polymer({
 		var x = (pt.x - tr.translate[0]) / tr.scale[0];
 		var y = (pt.y - tr.translate[1]) / tr.scale[1] ;
 		return {x:x,y:y};
+	},
+
+	notifyModify: function() {
+		this.modified = true;
+		WORKBENCH.fire("modify");
+	},
+
+	onModifiedChanged: function() {
+		if(this.modified) this.fire("label", this.filename + "*");
+		else this.fire("label", this.filename || "null");
+	},
+
+	onLoaded: function() {
+		this.modified = false;
+		$(this.$.loading).fadeOut();
+	},
+
+	onFocus: function() {
+		WORKBENCH.curEditor = this;
 	}
 
 });
