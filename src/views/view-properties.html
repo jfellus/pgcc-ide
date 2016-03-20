@@ -4,13 +4,22 @@
 	table { width:100%; height:auto; padding:0; margin:0;}
 	td { padding: 2px 8px; border-bottom:1px solid #dddddd;}
 	td:first-child { font-weight:bold; background:#eeeeee; width:0px; }
+	div { display:flex; align-items: center; align-content: center; justify-content: center; width:100%; height:100%; background:#eeeeee; color:#999999; white-space: nowrap;}
 </style>
 <template>
-	<table cellspacing=0 cellpadding=0 border=0>
-	<template id='list' is="dom-repeat" items='{{params}}'>
-		<tr><td width="1%">{{item.key}}</td><td width='100%' contenteditable="true" on-focus="focus" on-keydown="keydown" on-keypress="keypress">{{item.value}}</td></tr>
+	<template is="dom-if" if='{{bNothingSelected}}'>
+		<div>No selection</div>
 	</template>
-	</table>
+	<template is="dom-if" if='{{bMultipleSelection}}'>
+		<div>{{nbSelected}} modules selected</div>
+	</template>
+	<template is="dom-if" if='{{!bMultipleSelection}}'>
+		<table cellspacing=0 cellpadding=0 border=0>
+			<template id='list' is="dom-repeat" items='{{params}}'>
+				<tr><td width="1%">{{item.key}}</td><td width='100%' contenteditable="true" on-focus="focus" on-keydown="keydown" on-keypress="keypress">{{item.value}}</td></tr>
+			</template>
+		</table>
+	</template>
 </template>
 </dom-module>
 <script>
@@ -99,9 +108,20 @@ Polymer({
 		var that = this;
 		if(this.updating) return;
 		this.updating = true;
-	 	setTimeout(function() {
+		this.bNothingSelected = this.bMultipleSelection = false;
+
+		if(!that.selection || !that.selection.length) {
 			that.set("params", []);
-			that.set("params", that.getProperties(that.selection));
+			this.bNothingSelected = true;
+			this.updating = false;
+		} else if(that.selection.length>1) {
+			that.set("params", []);
+			this.bMultipleSelection = true;
+			this.nbSelected = that.selection.length;
+			this.updating = false;
+		} else setTimeout(function() {
+			that.set("params", []);
+			that.set("params", that.getProperties(that.selection[0]));
 			that.updating = false;
 		}, 50);
 	}

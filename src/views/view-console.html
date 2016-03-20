@@ -25,17 +25,12 @@ Polymer({
 	attached: function() {
 		var that = this;
 		var i = 0;
-		setInterval(function(){
-			i++;
-			that.out("jfellus@jfellus-LIFEBOOK-E744:~$ echo abraham " + i);
-			that.out("Testing stuff ... [DONE]");
-			that.out("Double free or corruption");
-			that.out("");
-		}, 3000);
+		WORKBENCH.console = this;
 	},
 
 	out: function(x) {
 		var that = this;
+		ZOB = x;
 		this.content += x + "\n";
 		setTimeout(function(){that.$.content.scrollTop = that.$.content.scrollHeight;}, 1);
 	}

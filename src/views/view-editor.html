@@ -16,6 +16,16 @@ const util = require('util');
 		width:100%; height:100%; box-sizing: border-box;
 	}
 
+	svg /deep/ rect.selection {
+		z-index:10000;
+		stroke-width:1;
+		stroke:#0000FF;
+		fill:#DDDDFF;
+		vector-effect:non-scaling-stroke;
+		opacity:0.3;
+		visibility: hidden;
+	}
+
 	svg /deep/ rect.module {
 		z-index:10;
 		stroke-width:1;
@@ -66,7 +76,10 @@ const util = require('util');
 	 			 <--><path class='marker-path' d='M0,50 L100,0 L0,-50 Z'/>
    			</marker>
 		</defs>
-		<g id="world"></g>
+		<g id="world">
+			<g id="gLinks"></g>
+			<g id="gModules"></g>
+		</g>
 	</svg>
 </template>
 </dom-module>
@@ -108,6 +121,8 @@ Polymer({
 			if(d3.event.which === 2) return fn_mousemove.apply(this, arguments);
 		});
 
+		$(this.$.svg).on("mousedown", function(evt){that.onMousedown(evt);});
+		$(this.$.svg).on("mouseup", function(evt){that.onMouseup(evt);});
 
 		$(this.$.svg).on("mousemove", function(evt){
 			if(that.creator && that.creator.onMousemove(evt)) return;
@@ -115,11 +130,16 @@ Polymer({
 		});
 
 		this.$.svg.addEventListener("click", function(evt) {
+			if(evt.which !== 1 || that._preventClick) return that._preventClick = false;
 			if(that.creator && that.creator.onClick(evt)) return;
-			that.unselect();
+			that.onClick(evt);
 		});
 
 		this.world = d3.select(this.$.world);
+		this.gModules = d3.select(this.$.gModules);
+		this.gLinks = d3.select(this.$.gLinks);
+
+		this.selectionBox = this.world.append("rect").classed("selection", true);
 
 
 		if(this.filename) this.async(function() {this.open(this.filename); });
@@ -181,27 +201,44 @@ Polymer({
 	// SELECTION //
 	///////////////
 
-	getSelection: function() {
-		var s = this.selection.component;
-		if(!s) return this.selection;
-		return s;
-	},
+	select: function(o, bAdd) {
+		var that = this;
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
+		if(!this.selection) this.selection = [];
 
-	select: function(o) {
-		if(this.selection) this.getSelection().setSelected(false);
-		this.selection = Array.isArray(o) ? o[0] : o; // TODO Multiple selection
-		this.getSelection().setSelected(true);
+		if(!Array.isArray(o)) o = [o];
+		if(bAdd) {
+			o.forEach(function(m) {
+				var i = that.selection.indexOf(m);
+				if(i===-1) that.selection.push(m);
+				else that.selection.splice(i,1);
+			});
+			that.selection = that.selection.slice();
+		}
+		else this.selection = o;
 
+		this.selection.forEach(function(m) {if(m.component) m.component.setSelected(true); });
+
+		if(!this.selection.length) this.selection = null;
 		WORKBENCH.selection = this.selection;
 	},
 
 	unselect: function() {
-		if(this.selection) this.getSelection().setSelected(false);
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
 		this.selection = null;
 
 		WORKBENCH.selection = this.selection;
 	},
 
+	selectRect: function(rect, bAdd) {
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
+		var sel = this.script.modules.filter(function(m) {
+			if(!m.component) return false;
+			return m.component.isInRect(rect);
+		});
+		if(sel.length) this.select(sel, bAdd);
+		else if(!bAdd) this.unselect();
+	},
 
 	/////////////
 	// EDITION //
@@ -217,7 +254,7 @@ Polymer({
 
 	delete: function() {
 		if(!this.selection) return;
-		this.getSelection().remove();
+		this.selection.forEach(function(m) { if(m.component) m.component.remove(); });
 		this.unselect();
 		this.notifyModify();
 	},
@@ -235,6 +272,13 @@ Polymer({
 		this.notifyModify();
 	},
 
+	moveSelection: function(dx,dy) {
+		if(!this.selection) return;
+		this.selection.forEach(function(m) {
+			m.set("x", m.x + dx);
+			m.set("y", m.y + dy);
+		});
+	},
 
 
 	//////////////
@@ -293,6 +337,42 @@ Polymer({
 	onMousemove: function(evt) {
 		this.mousePos = {x:evt.offsetX, y:evt.offsetY};
 		this.mousePosWorld = this.clientToWorld(this.mousePos);
+		if(this.drag) this.onDrag(evt);
+	},
+
+	onMousedown: function(evt) {
+		if(evt.which === 1) {
+			this.drag = { target: evt.target };
+			if(this.drag.target === this.$.svg) {
+				var pt = this.clientToWorld({x:evt.offsetX, y:evt.offsetY});
+				this.selectionBox.attr("x1", pt.x).attr("y1", pt.y);
+			}
+		}
+	},
+
+	onMouseup: function(evt) {
+		this.drag = null;
+		if(this.bMultipleSelection) {
+			this.bMultipleSelection = false;
+			this.selectionBox.style({visibility:"hidden"});
+			this.selectRect(svg_rect_get(this.selectionBox), evt.shiftKey);
+			this._preventClick = true;
+		}
+	},
+
+	onDrag: function(evt) {
+		if(this.drag.target === this.$.svg) {
+			this.bMultipleSelection = true;
+			var sb = this.selectionBox;
+			var pt = this.clientToWorld({x:evt.offsetX, y:evt.offsetY});
+			sb.attr("x2", pt.x).attr("y2", pt.y);
+			svg_rect_set_coords(sb, parseFloat(sb.attr("x1")),parseFloat(sb.attr("y1")),pt.x,pt.y);
+			sb.style({visibility:"visible"});
+		}
+	},
+
+	onClick: function(evt) {
+		if(!evt.shiftKey) this.unselect();
 	},
 
 	clientToWorld: function(pt) {
@@ -322,6 +402,24 @@ Polymer({
 	}
 
 });
+
+
+
+
+///////////
+// UTILS //
+///////////
+
+function svg_rect_set_coords(rect, x1, y1, x2, y2) {
+	if(x1 < x2) { rect.attr("x", x1); rect.attr("width", x2-x1); }
+	else {	rect.attr("x", x2); rect.attr("width", x1-x2); }
+	if(y1 < y2) {	rect.attr("y", y1); rect.attr("height", y2-y1); }
+	else {	rect.attr("y", y2); rect.attr("height", y1-y2); }
+}
+
+function svg_rect_get(r) {
+	return {x:parseFloat(r.attr("x")), y:parseFloat(r.attr("y")), w:parseFloat(r.attr("width")), h:parseFloat(r.attr("height"))};
+}
 
 
 </script>

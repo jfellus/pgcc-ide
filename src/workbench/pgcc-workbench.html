@@ -112,6 +112,14 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 
 var WORKBENCH = null;
 
+
+var consoleLog = console.log;
+console.log = function(x) {
+	if(WORKBENCH.console) return WORKBENCH.console.out(x);
+	else return consoleLog.bind(this)(x);
+}
+
+
 Polymer({
 	is: 'pgcc-workbench',
 	properties: {

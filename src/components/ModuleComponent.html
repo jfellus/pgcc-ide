@@ -46,10 +46,10 @@ function ModuleComponent(editor, m) {
 
 	var dragBehavior = d3.behavior.drag()
 	  .on("drag", function() {
-			if(d3.event.sourceEvent.which !== 1) return;
-			editor.select(m);
-			m.set("x", m.x + d3.event.dx);
-			m.set("y", m.y + d3.event.dy);
+			if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
+			if(!editor.selection || editor.selection.indexOf(m)===-1) editor.select(m);
+			editor.moveSelection(d3.event.dx, d3.event.dy);
+			that._preventClick = true;
 	  });
 	this.component.call(dragBehavior);
 
@@ -65,10 +65,11 @@ function ModuleComponent(editor, m) {
 	}
 
 	this.component.node().addEventListener("click", function(e) {
+		e.stopPropagation();
+		if(e.which !== 1 || that._preventClick) return that._preventClick = false;
 		e.module = m;
 		if(editor.creator && editor.creator.onClick(e)) return;
-		editor.select(m);
-		e.stopPropagation();
+		editor.select(m, e.shiftKey);
 	});
 
 }
@@ -76,10 +77,10 @@ util.inherits(ModuleComponent, EventEmitter);
 
 
 ModuleComponent.prototype._createComponent = function(m) {
-	var w = 85;
-	var h = 65;
+	var w = this.w = 85;
+	var h = this.h = 65;
 
-	var c = this.editor.world.append("g")
+	var c = this.editor.gModules.append("g")
 		.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
 
 	c.append("rect")
@@ -103,6 +104,8 @@ ModuleComponent.prototype._createComponent = function(m) {
 
 
 ModuleComponent.prototype.addPin = function(name, side, pct) {
+	var w = this.w;
+	var h = this.h;
 	var x,y;
 	var MARG = 1;
 	if(side=="left") { x = -w/2; y = (pct-0.5)*MARG*h; }
@@ -158,6 +161,29 @@ ModuleComponent.prototype.remove = function() {
 	this.m.delete();
 	this.component.remove();
 	this.editor.notifyModify();
+}
+
+
+ModuleComponent.prototype.isInRect = function(rect) {
+	return rect_contains_rect(rect, {x:this.m.x - this.w/2, y:this.m.y - this.h/2, w:this.w, h:this.h});
+}
+
+
+
+
+///////////
+// UTILS //
+///////////
+
+
+/** @return true if rectangle r1 fully contains rectangle r2 */
+function rect_contains_rect(r1, r2) {
+	return rect_contains_pt(r1, {x:r2.x, y:r2.y}) && rect_contains_pt(r1, {x:r2.x+r2.w, y:r2.y+r2.h});
+}
+
+/** @return true if rectangle r contains point p */
+function rect_contains_pt(r, p) {
+	return p.x >= r.x && p.y >= r.y && p.x <= r.x + r.w && p.y <= r.y + r.h;
 }
 
 </script>

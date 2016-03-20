@@ -75,7 +75,7 @@ LinkComponent.prototype._createPath = function() {
 }
 
 LinkComponent.prototype._createComponent = function() {
-	return this.editor.world.insert("path", "g").attr("d", this._createPath());
+	return this.editor.gLinks.append("path").attr("d", this._createPath());
 }
 
 LinkComponent.prototype.setSelected = function(bSelected) {

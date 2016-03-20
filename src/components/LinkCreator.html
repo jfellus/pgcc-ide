@@ -6,7 +6,7 @@ function LinkCreator(editor, l) {
 	var that = this;
 	this.editor = editor;
 
-	this.spot = this.editor.world.append("circle").classed("link-creator", true).attr("r", 6).style({"pointer-events":"none", "visibility": "hidden"});
+	this.spot = this.editor.gLinks.append("circle").classed("link-creator", true).attr("r", 6).style({"pointer-events":"none", "visibility": "hidden"});
 
 }
 util.inherits(LinkCreator, LinkComponent);
