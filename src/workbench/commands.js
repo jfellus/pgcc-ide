@@ -25,3 +25,15 @@ Commands.Search = function() {};
 Commands.Compile = function() {};
 Commands.Start = function() {};
 Commands.Stop = function() {};
+
+
+
+Commands.moveUp = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.moveUp(); }
+Commands.moveDown = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.moveDown(); }
+Commands.moveRight = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.moveRight(); }
+Commands.moveLeft = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.moveLeft(); }
+
+Commands.panUp = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panUp(); }
+Commands.panDown = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panDown(); }
+Commands.panRight = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panRight(); }
+Commands.panLeft = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panLeft(); }

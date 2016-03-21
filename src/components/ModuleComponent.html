@@ -29,8 +29,8 @@ function ModuleComponent(editor, m) {
 	m.component = this;
 	m.pinCoords = {};
 
-	if(!m.x) m.x = m.params.x;
-	if(!m.y) m.y = m.params.y;
+	if(!m.x) m.x = parseFloat(m.params.x);
+	if(!m.y) m.y = parseFloat(m.params.y);
 	if(!m.x) m.params.x = m.x = Math.random()*1000;
 	if(!m.y) m.params.y = m.y = Math.random()*700;
 
@@ -46,11 +46,13 @@ function ModuleComponent(editor, m) {
 
 
 	var dragBehavior = d3.behavior.drag()
-	  .on("dragstart", function() { that._oldPos = {x:m.x, y:m.y}; })
-	  .on("dragend", function() { editor.addHistory(new CommandSet(editor, m, that._oldPos)); })
+	  .on("dragstart", function() { that._oldPos = {x:m.x, y:m.y};
+			if(!editor.selection || editor.selection.indexOf(m)===-1) editor.select(m);
+			that._oldPos = editor.selection.map(function(mm) { return {x:mm.x, y:mm.y}; });
+  		})
+	  .on("dragend", function() { editor.addHistory(new CommandSet(editor, editor.selection, that._oldPos)); })
 	  .on("drag", function() {
 			if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
-			if(!editor.selection || editor.selection.indexOf(m)===-1) editor.select(m);
 			editor.moveSelection(d3.event.dx, d3.event.dy);
 			that._preventClick = true;
 	  });

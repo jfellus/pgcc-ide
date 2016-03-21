@@ -278,14 +278,34 @@ Polymer({
 	moveSelection: function(dx,dy) {
 		if(!this.selection) return;
 		this.selection.forEach(function(m) {
+			if(!m.x) m.x = parseFloat(m.params.x);
+			if(!m.y) m.y = parseFloat(m.params.y);
 			m.set("x", m.x + dx);
 			m.set("y", m.y + dy);
 		});
 	},
 
-	addHistory: function(cmd) { this.history.add(cmd); },
+	moveLeft: function() { this.move(-20,0);},
+	moveRight: function() { this.move(20,0);},
+	moveUp: function() { this.move(0,-20);},
+	moveDown: function() { this.move(0,20);},
+
+	move: function(dx, dy) {
+		if(!this.selection) return;
+		var oldpos = this.selection.map(function(m) { return {x:m.x, y:m.y}; });
+		this.moveSelection(dx * this.getZoom(), dy * this.getZoom());
+		this.addHistory(new CommandSet(this, this.selection, oldpos));
+	},
+
+
+	///////////////
+	// UNDO/REDO //
+	///////////////
+
 	undo: function() { this.history.undo(); },
 	redo: function() { this.history.redo(); },
+
+	addHistory: function(cmd) { this.history.add(cmd); },
 
 
 	//////////////
@@ -383,11 +403,8 @@ Polymer({
 		if(!evt.shiftKey) this.unselect();
 	},
 
-	clientToWorld: function(pt) {
-		var tr = d3.transform(this.world.attr("transform"));
-		var x = (pt.x - tr.translate[0]) / tr.scale[0];
-		var y = (pt.y - tr.translate[1]) / tr.scale[1] ;
-		return {x:x,y:y};
+	onKeydown: function(evt) {
+		console.log(evt.which);
 	},
 
 	notifyModify: function() {
@@ -408,7 +425,32 @@ Polymer({
 
 	onFocus: function() {
 		WORKBENCH.curEditor = this;
+	},
+
+	////////////////
+	// NAVIGATION //
+	////////////////
+
+	clientToWorld: function(pt) {
+		var tr = d3.transform(this.world.attr("transform"));
+		var x = (pt.x - tr.translate[0]) / tr.scale[0];
+		var y = (pt.y - tr.translate[1]) / tr.scale[1] ;
+		return {x:x,y:y};
+	},
+
+	getZoom: function() { return d3.transform(this.world.attr("transform")).scale[0]; },
+
+	panLeft: function() { this.pan(20,0);},
+	panRight: function() { this.pan(-20,0); },
+	panUp: function() { this.pan(0,20); },
+	panDown: function() { this.pan(0,-20); },
+
+	pan: function(dx,dy) {
+		var tr = this.zoomBehavior.translate();
+		this.zoomBehavior.translate([tr[0]+dx, tr[1]+dy]);
+		this.zoomBehavior.event(d3.select(this.$.svg));
 	}
+
 
 });
 

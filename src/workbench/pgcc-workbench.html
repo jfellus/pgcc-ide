@@ -140,7 +140,11 @@ Polymer({
 			if(evt.altKey && key.indexOf("alt+")===-1) return;
 			var key = key.split("+"); key = key[key.length-1].toUpperCase();
 			if( (key === String.fromCharCode(evt.keyCode))
-			 || (key === "SPACE" && evt.keyCode === 32)
+			 || (key === "LEFT" && evt.keyCode === 37)
+			 || (key === "RIGHT" && evt.keyCode === 39)
+			 || (key === "UP" && evt.keyCode === 38)
+			 || (key === "DOWN" && evt.keyCode === 40)
+ 			 || (key === "SPACE" && evt.keyCode === 32)
 			 || (key === "ESCAPE" && evt.keyCode === 27)
 			 || (key === "ENTER" && evt.keyCode === 13)
 		  	 || (key === "SUPPR" && evt.keyCode === 46)) WORKBENCH.command(cmd);
@@ -181,6 +185,17 @@ Polymer({
 			$(this).click(function(){ WORKBENCH.command(cmd); });
 			if($(this).attr("key")) WORKBENCH.bindKeyshortcut($(this).attr("key"), cmd);
 		});
+
+
+
+		WORKBENCH.bindKeyshortcut("LEFT", "moveLeft");
+		WORKBENCH.bindKeyshortcut("RIGHT", "moveRight");
+		WORKBENCH.bindKeyshortcut("UP", "moveUp");
+		WORKBENCH.bindKeyshortcut("DOWN", "moveDown");
+		WORKBENCH.bindKeyshortcut("ctrl+LEFT", "panLeft");
+		WORKBENCH.bindKeyshortcut("ctrl+RIGHT", "panRight");
+		WORKBENCH.bindKeyshortcut("ctrl+UP", "panUp");
+		WORKBENCH.bindKeyshortcut("ctrl+DOWN", "panDown");
 
 		setTimeout(main, 200);
 
