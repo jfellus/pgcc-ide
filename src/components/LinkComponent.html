@@ -6,6 +6,7 @@ function LinkComponent(editor, l) {
 	var that = this;
 	this.link = l;
 	this.editor = editor;
+	this.bAttached = true;
 
 	l.component = this;
 
@@ -83,8 +84,18 @@ LinkComponent.prototype.setSelected = function(bSelected) {
 }
 
 LinkComponent.prototype.remove = function() {
+	if(!this.bAttached) return;
+	this.bAttached = false;
 	this.link.delete();
-	this.component.remove();
+	$(this.component.node()).detach();
+	this.editor.notifyModify();
+}
+
+LinkComponent.prototype.reattach = function() {
+	if(this.bAttached) return;
+	this.bAttached = true;
+	this.link.reattach();
+	$(this.editor.gLinks.node()).append($(this.component.node()));
 	this.editor.notifyModify();
 }
 

@@ -39,6 +39,7 @@ LinkCreator.prototype.create = function() {
 	this.spot.remove();
 	this.component.attr("d", this._createPath());
 	if(this.editor.creator === this)  this.editor.creator = null;
+	this.editor.addHistory(new CommandCreate(this.editor, this.link));
 }
 
 LinkCreator.prototype.cancel = function() {

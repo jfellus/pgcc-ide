@@ -24,6 +24,7 @@ function ModuleComponent(editor, m) {
 	var that = this;
 	this.editor = editor;
 	this.m = m;
+	this.bAttached = true;
 
 	m.component = this;
 	m.pinCoords = {};
@@ -45,6 +46,8 @@ function ModuleComponent(editor, m) {
 
 
 	var dragBehavior = d3.behavior.drag()
+	  .on("dragstart", function() { that._oldPos = {x:m.x, y:m.y}; })
+	  .on("dragend", function() { editor.addHistory(new CommandSet(editor, m, that._oldPos)); })
 	  .on("drag", function() {
 			if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
 			if(!editor.selection || editor.selection.indexOf(m)===-1) editor.select(m);
@@ -156,10 +159,20 @@ ModuleComponent.prototype.setSelected = function(bSelected) {
 }
 
 ModuleComponent.prototype.remove = function() {
+	if(!this.bAttached) return;
+	this.bAttached = false;
 	this.m.outs.slice().forEach(function(l) { if(l.component) l.component.remove();	});
 	this.m.ins.slice().forEach(function(l) { if(l.component) l.component.remove();	});
 	this.m.delete();
-	this.component.remove();
+	$(this.component.node()).detach();
+	this.editor.notifyModify();
+}
+
+ModuleComponent.prototype.reattach = function() {
+	if(this.bAttached) return;
+	this.bAttached = true;
+	this.m.reattach();
+	$(this.editor.gModules.node()).append($(this.component.node()));
 	this.editor.notifyModify();
 }
 

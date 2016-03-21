@@ -8,6 +8,7 @@ const util = require('util');
 <link rel="import" href="../components/LinkCreator.html">
 <link rel="import" href="../components/LinkCreator.html">
 <link rel="import" href="../workbench/Clipboard.html">
+<link rel="import" href="../workbench/History.html">
 
 
 <dom-module id="view-editor">
@@ -145,6 +146,7 @@ Polymer({
 		if(this.filename) this.async(function() {this.open(this.filename); });
 		else this.async(function() {this.newDocument();})
 
+		this.history = new History();
 	},
 
 
@@ -255,6 +257,7 @@ Polymer({
 	delete: function() {
 		if(!this.selection) return;
 		this.selection.forEach(function(m) { if(m.component) m.component.remove(); });
+		this.addHistory(new CommandDelete(this, this.selection));
 		this.unselect();
 		this.notifyModify();
 	},
@@ -280,6 +283,10 @@ Polymer({
 		});
 	},
 
+	addHistory: function(cmd) { this.history.add(cmd); },
+	undo: function() { this.history.undo(); },
+	redo: function() { this.history.redo(); },
+
 
 	//////////////
 	// CREATORS //
@@ -295,7 +302,6 @@ Polymer({
 		if(hint.id) m.id = hint.id;
 
 		this.creator = new ModuleCreator(this, m);
-		this.creator.on("create", function() {that.push("modules", m);});
 	},
 
 	createLink: function(hint) {
@@ -314,6 +320,7 @@ Polymer({
 	cut: function() {
 		if(!this.selection) return;
 		CLIPBOARD.cut(this.selection);
+		this.addHistory(new CommandCut(this, this.selection));
 		this.unselect();
 		this.notifyModify();
 	},
@@ -326,6 +333,7 @@ Polymer({
 	paste: function() {
 		var pasted = CLIPBOARD.paste(this, this.mousePosWorld);
 		this.select(pasted);
+		this.addHistory(new CommandPaste(this, pasted));
 		this.notifyModify();
 	},
 
@@ -395,6 +403,7 @@ Polymer({
 	onLoaded: function() {
 		this.modified = false;
 		$(this.$.loading).fadeOut();
+		this.HISTORY = new History();
 	},
 
 	onFocus: function() {

@@ -42,6 +42,16 @@ Array.prototype.remove = function(val) {
     return this;
 };
 
+Array.prototype.popLast = function() {
+	if(!this.length) throw "Underflow";
+	return this.splice(this.length-1,1)[0];
+};
+
+Array.prototype.popFirst = function() {
+	if(!this.length) throw "Underflow";
+	return this.splice(0,1)[0];
+};
+
 Array.prototype.has = function(val) {
 	return this.indexOf(val)!==-1;
 };

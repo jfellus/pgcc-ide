@@ -71,7 +71,7 @@ div.h { display:flex;flex-direction:row; align-items: stretch; align-content: st
 			<item key="ctrl+shift+S">SaveAs</item>
 			<item key="ctrl+W">Close</item>
 			<separator></separator>
-			<item key="ctrk+Z">Undo</item>
+			<item key="ctrl+Z">Undo</item>
 			<item key="ctrl+shift+Z">Redo</item>
 			<item key="ctrl+X">Cut</item>
 			<item key="ctrl+C">Copy</item>
@@ -268,11 +268,13 @@ Polymer({
 	//////////
 
 	undo: function() {
-
+		if(!this.curEditor) return;
+		this.curEditor.undo();
 	},
 
 	redo: function() {
-
+		if(!this.curEditor) return;
+		this.curEditor.redo();
 	},
 
 

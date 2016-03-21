@@ -1,10 +1,15 @@
+<link rel="import" href="../workbench/History.html">
+
+
 
 <dom-module id="view-properties">
 <style>
 	table { width:100%; height:auto; padding:0; margin:0;}
-	td { padding: 2px 8px; border-bottom:1px solid #dddddd;}
+	td {border-bottom:1px solid #dddddd;}
+	td:first-child, input { padding: 3px 5px; }
 	td:first-child { font-weight:bold; background:#eeeeee; width:0px; }
 	div { display:flex; align-items: center; align-content: center; justify-content: center; width:100%; height:100%; background:#eeeeee; color:#999999; white-space: nowrap;}
+	input { width:100%; height:100%; border:none; }
 </style>
 <template>
 	<template is="dom-if" if='{{bNothingSelected}}'>
@@ -16,7 +21,9 @@
 	<template is="dom-if" if='{{!bMultipleSelection}}'>
 		<table cellspacing=0 cellpadding=0 border=0>
 			<template id='list' is="dom-repeat" items='{{params}}'>
-				<tr><td width="1%">{{item.key}}</td><td width='100%' contenteditable="true" on-focus="focus" on-keydown="keydown" on-keypress="keypress">{{item.value}}</td></tr>
+				<tr><td width="1%">{{item.key}}</td><td width='100%'>
+					<input type="text" on-focus="focus" on-keydown="keydown" on-keypress="keypress" value="{{item.value}}"></input>
+				</td></tr>
 			</template>
 		</table>
 	</template>
@@ -51,7 +58,7 @@ Polymer({
 
 	focus:function(e) {
 		this.editedField = e.target;
-		e.target.setAttribute("last-value", $(e.target).text());
+		e.target.setAttribute("last-value", $(e.target).val());
 	},
 
 	keydown: function(e) {
@@ -60,20 +67,20 @@ Polymer({
 
 		function increment(amount) {
 			e.preventDefault();
-			var v = parseFloat($(e.target).text());
-			if(""+v === $(e.target).text()) v += amount;
-			$(e.target).text(v);
+			var v = parseFloat($(e.target).val());
+			if(""+v === $(e.target).val()) v += amount;
+			$(e.target).val(v);
 			that.onSetValue(e.srcElement);
 		}
 
 		if(e.keyIdentifier === "Escape" || e.which===27) {
-			$(e.target).text(e.target.getAttribute("last-value"));
+			$(e.target).val(e.target.getAttribute("last-value"));
 			e.preventDefault();
 			e.target.blur();
 			this.editedField = null;
 		}
-		// else if(e.keyIdentifier === "Up") increment(1.0);
-		// else if(e.keyIdentifier === "Down") increment(-1.0);
+		else if(e.keyIdentifier === "Up") increment(1.0);
+		else if(e.keyIdentifier === "Down") increment(-1.0);
 	},
 
 	keypress: function(e) {
@@ -87,10 +94,17 @@ Polymer({
 
 
 	onSetValue: function(elt) {
-		if(!this.validate($(elt).prev().text(), $(elt).text())) {
-			$(elt).text($(elt).attr("last-value"));
+		var k = $(elt).parent().prev().text();
+		var v = $(elt).val();
+		if(!this.validate(k,v)) {
+			$(elt).val($(elt).attr("last-value"));
 		} else {
-			this.selection.set($(elt).prev().text(), $(elt).text());
+			var old = {}; old[k] = this.selection[0].get(k);
+			this.selection[0].set(k,v);
+			if(WORKBENCH.curEditor) {
+				WORKBENCH.curEditor.addHistory(new CommandSet(WORKBENCH.curEditor, this.selection, old));
+				WORKBENCH.curEditor.focus();
+			}
 		}
 	},
 

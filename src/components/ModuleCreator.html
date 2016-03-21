@@ -20,6 +20,7 @@ ModuleCreator.prototype.onClick = function() {
 
 ModuleCreator.prototype.create = function() {
 	if(this.editor.creator === this)  this.editor.creator = null;
+	this.editor.addHistory(new CommandCreate(this.editor, this.m));
 }
 
 ModuleCreator.prototype.cancel = function() {
