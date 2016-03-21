@@ -20,6 +20,7 @@ function LinkComponent(editor, l) {
 		var value = evt.value;
 		if(key === "src") that.onSetSrc(value);
 		else if(key === "dst") that.onSetDst(value);
+		else if(key === "srcPin" || key === "dstPin") that.update();
 		editor.notifyModify();
 	});
 
@@ -28,36 +29,39 @@ function LinkComponent(editor, l) {
 }
 util.inherits(LinkComponent, EventEmitter);
 
+LinkComponent.prototype.update = function() {
+	this.component.attr("d", this._createPath());
+}
+
 
 LinkComponent.prototype.onSetSrc = function(src) {
 	var that = this;
-	function update() { that.component.attr("d", that._createPath());  }
 
 	if(this.srcComponent) {
-		this.srcComponent.off("move", update);
+		this.srcComponent.off("move", this.update.bind(this));
 	}
 
 	this.srcComponent = this.link.src ? this.link.src.component : null;
-	if(this.srcComponent) this.srcComponent.on("move", update);
+	if(this.srcComponent) this.srcComponent.on("move", this.update.bind(this));
 }
 
 LinkComponent.prototype.onSetDst = function(dst) {
 	var that = this;
-	function update() { that.component.attr("d", that._createPath());  }
 
 	if(this.dstComponent) {
-		this.dstComponent.off("move", update);
+		this.dstComponent.off("move", this.update.bind(this));
 	}
 
 	this.dstComponent = this.link.dst ? this.link.dst.component : null;
-	if(this.dstComponent) this.dstComponent.on("move", update);
+	if(this.dstComponent) this.dstComponent.on("move", this.update.bind(this));
 }
 
 
 LinkComponent.prototype.getSrcPoint = function() {
 	var l = this.link;
 	var ptSrc = l.src;
-	if(l.srcPin && ptSrc.pinCoords[l.srcPin]) ptSrc = ptSrc.pinCoords[l.srcPin];
+	var srcPin = this.link.get("srcPin");
+	if(srcPin && ptSrc.pinCoords[srcPin]) ptSrc = ptSrc.pinCoords[srcPin];
 	if(!ptSrc || !ptSrc.x || !ptSrc.y) return null;
 	return [ptSrc.x, ptSrc.y];
 }
@@ -65,7 +69,8 @@ LinkComponent.prototype.getSrcPoint = function() {
 LinkComponent.prototype.getDstPoint = function() {
 	var l = this.link;
 	var ptDst = l.dst;
-	if(l.dstPin && ptDst.pinCoords[l.dstPin]) ptDst = ptDst.pinCoords[l.dstPin];
+	var dstPin = this.link.get("dstPin");
+	if(dstPin && ptDst.pinCoords[dstPin]) ptDst = ptDst.pinCoords[dstPin];
 	if(!ptDst || !ptDst.x || !ptDst.y) return null;
 	return [ptDst.x, ptDst.y];
 }

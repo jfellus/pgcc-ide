@@ -29,8 +29,10 @@ LinkCreator.prototype.onClick = function(e) {
 	if(!e.module) return;
 	if(!this.link.src) {
 		this.link.set("src", e.module);
+		if(e.pin) this.link.set("srcPin", e.pin);
 	} else {
 		this.link.set("dst", e.module);
+		if(e.pin) this.link.set("dstPin", e.pin);
 		this.create();
 	}
 }

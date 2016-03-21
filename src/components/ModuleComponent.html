@@ -1,21 +1,5 @@
 <script src="../bower_components/d3/d3.min.js"></script>
 <script>
-// function Module(name) {
-// 	this.x = Math.random()*1000;
-// 	this.y = Math.random()*700,
-// 	this.name = name;
-//
-// 	this.pins = [
-// 			{ name:"VCC", side:"left" },
-// 			{ name:"Vin", side:"left"},
-// 			{ name:"OV", side:"left"},
-// 			{ name:"learn", side:"top"},
-// 			{ name:"RX", side:'right'},
-// 			{ name:"TX", side:"right"}
-// 		];
-//
-// 	this.moveListeners = [];
-// }
 
 
 
@@ -25,6 +9,19 @@ function ModuleComponent(editor, m) {
 	this.editor = editor;
 	this.m = m;
 	this.bAttached = true;
+
+
+	/////////////// FAKE ////////////////////////:
+		m.pins = [
+				{ name:"VCC", side:"left" },
+				{ name:"Vin", side:"left"},
+				{ name:"OV", side:"left"},
+				{ name:"learn", side:"top"},
+				{ name:"RX", side:'right'},
+				{ name:"TX", side:"right"}
+			];
+/////////////////////////////////
+
 
 	m.component = this;
 	m.pinCoords = {};
@@ -109,6 +106,7 @@ ModuleComponent.prototype._createComponent = function(m) {
 
 
 ModuleComponent.prototype.addPin = function(name, side, pct) {
+	var that = this;
 	var w = this.w;
 	var h = this.h;
 	var x,y;
@@ -138,6 +136,16 @@ ModuleComponent.prototype.addPin = function(name, side, pct) {
 
 	var ctm = pin.node().getCTM();
 	this.m.pinCoords[name] = {x:ctm.e+x,y:ctm.f+y, relX:x, relY:y};
+
+	pin.node().addEventListener("click", function(e) {
+		e.stopPropagation();
+		if(e.which !== 1 || that._preventClick) return that._preventClick = false;
+		e.module = that.m;
+		e.pin = name;
+		if(that.editor.creator && that.editor.creator.onClick(e)) return;
+		that.editor.select(that.m, e.shiftKey);
+	});
+
 }
 
 
